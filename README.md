@@ -13,7 +13,7 @@
 > the [nunjucks](https://mozilla.github.io/nunjucks/) templates for rendering data.
 >
 > The transpiled JavaScript files should work in the same way as the original JavaScript
-> module [MMM-Hello-World](https://github.com/ismarslomic/MMM-Hello-World).
+> module [MMM-CabinStats](https://github.com/ismarslomic/MMM-CabinStats).
 
 ## Example screenshot
 
