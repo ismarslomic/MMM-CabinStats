@@ -1,0 +1,63 @@
+{
+  "name": "mmm-hello-world-ts",
+  "version": "1.0.0",
+  "description": "Magic Mirror example module in Typescript",
+  "main": "MMM-Hello-World-Ts.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ismarslomic/MMM-Hello-World-Ts.git"
+  },
+  "author": "ismar@slomic.no",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ismarslomic/MMM-Hello-World-Ts/issues"
+  },
+  "homepage": "https://github.com/ismarslomic/MMM-Hello-World-Ts",
+  "scripts": {
+    "build": "rollup -c",
+    "lint": "eslint .",
+    "lint:report": "eslint . --format @microsoft/eslint-formatter-sarif --output-file eslint-results.sarif",
+    "lint:fix": "eslint . --fix",
+    "prettier": "npx prettier --check .",
+    "prettier:fix": "npx prettier --write .",
+    "dev": "rollup -c --sourcemap=inline",
+    "dev:watch": "npm run dev -- --watch",
+    "prepare": "node scripts/install-hooks.mjs",
+    "install:dep": "npm ci --omit=dev",
+    "test:e2e": "playwright test",
+    "test:unit": "vitest run",
+    "test:unit:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit -p tsconfig.frontend.json && tsc --noEmit -p tsconfig.backend.json && tsc --noEmit -p tsconfig.unit.json && tsc -p __tests__/e2e/tsconfig.json",
+    "lint:css": "stylelint \"css/**/*.css\"",
+    "check:generated": "npm run build && git diff --exit-code -- MMM-Hello-World-Ts.js MMM-Hello-World-Ts.js.map node_helper.js node_helper.js.map"
+  },
+  "overrides": {
+    "@microsoft/eslint-formatter-sarif": {
+      "eslint": "$eslint"
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@microsoft/eslint-formatter-sarif": "^3.1.0",
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "@types/magicmirror-module": "^2.16.6",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.9",
+    "rollup": "^4.64.0",
+    "stylelint": "^17.15.0",
+    "tslib": "^2.8.1",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.69.0",
+    "stylelint-config-standard": "^40.0.0",
+    "vitest": "^5.0.3",
+    "@types/node": "^24.19.1",
+    "@vitest/coverage-v8": "^5.0.3",
+    "@playwright/test": "^1.63.0"
+  }
+}

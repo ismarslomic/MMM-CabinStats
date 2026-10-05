@@ -1,0 +1,56 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Build & Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Use the supported Node.js version
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Run code linting
+        run: npm run lint
+
+      - name: Lint CSS
+        run: npm run lint:css
+
+      - name: Run code style linting
+        run: npm run prettier
+
+      - name: Check TypeScript types
+        run: npm run typecheck
+
+      - name: Build and verify checked-in JavaScript
+        run: npm run check:generated
+
+      - name: Run unit tests with coverage
+        id: unit-tests
+        run: npm run test:unit:coverage
+
+      - name: Upload unit test results
+        if: always() && steps.unit-tests.outcome != 'skipped'
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-results
+          path: coverage/unit-test-results.xml
+          if-no-files-found: warn
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v7
+        with:
+          flags: unittests # optional
+          verbose: true # optional (default = false)

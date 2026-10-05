@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["DOM", "ESNext"],
+    "types": ["node"]
+  },
+  "include": ["./**/*.ts", "../../playwright.config.ts"],
+  "exclude": []
+}

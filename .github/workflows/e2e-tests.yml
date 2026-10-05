@@ -1,0 +1,77 @@
+name: E2E tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: Playwright against MagicMirror 2.38.0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout the module code under test
+        uses: actions/checkout@v7
+
+      - name: Use the supported Node.js version
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install module development dependencies
+        run: npm ci
+
+      - name: Build the module from TypeScript
+        run: npm run build
+
+      - name: Checkout the supported MagicMirror release
+        uses: actions/checkout@v7
+        with:
+          repository: MagicMirrorOrg/MagicMirror
+          ref: v2.38.0
+          path: MagicMirror
+
+      - name: Install MagicMirror for server-only testing
+        working-directory: MagicMirror
+        run: npm ci --omit=dev --omit=optional
+
+      - name: Copy the newly built module into MagicMirror
+        run: |
+          mkdir -p MagicMirror/modules/MMM-Hello-World-Ts
+          rsync -a --exclude=.git --exclude=node_modules --exclude=MagicMirror --exclude=coverage \
+            ./ MagicMirror/modules/MMM-Hello-World-Ts/
+
+      - name: Install module runtime dependencies
+        working-directory: MagicMirror/modules/MMM-Hello-World-Ts
+        run: npm ci --omit=dev
+
+      - name: Configure MagicMirror for the tests
+        run: cp __tests__/e2e/mm/config.js MagicMirror/config/config.js
+
+      - name: Install the Chromium test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright against the built module
+        run: npm run test:e2e
+
+      - name: Upload the test report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload traces and screenshots when a test fails
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-failure-artifacts
+          path: test-results
+          if-no-files-found: ignore

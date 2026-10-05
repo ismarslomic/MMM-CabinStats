@@ -1,0 +1,15 @@
+node_modules
+.husky
+.eslintignore
+.prettierignore
+/MMM-Hello-World-Ts.js
+/node_helper.js
+*.map
+*.njk
+*.png
+coverage
+.gitignore
+
+playwright-report
+test-results
+MagicMirror
