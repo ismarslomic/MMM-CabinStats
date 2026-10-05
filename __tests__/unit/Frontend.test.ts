@@ -17,7 +17,7 @@ describe('Frontend', () => {
     expect(mockModuleRegister).toHaveBeenCalled()
 
     const { name, implementation } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall)
-    expect(name).toBe('MMM-Hello-World-Ts')
+    expect(name).toBe('MMM-CabinStats')
     expect(implementation.defaults).toEqual({
       text: 'Hello World!',
       updateInterval: 10000,
@@ -170,7 +170,7 @@ describe('Frontend', () => {
       } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall)
 
       // when-then
-      expect(getStyles()).toEqual(['/file/css/MMM-Hello-World-Ts.css'])
+      expect(getStyles()).toEqual(['/file/css/MMM-CabinStats.css'])
     })
   })
 
@@ -182,7 +182,7 @@ describe('Frontend', () => {
       } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall)
 
       // when-then
-      expect(getTemplate()).toEqual('templates/MMM-Hello-World-Ts.njk')
+      expect(getTemplate()).toEqual('templates/MMM-CabinStats.njk')
     })
   })
 })
@@ -197,7 +197,7 @@ const checkAndExtractRegistration = (call?: unknown) => {
   // Add MM2 inherited bits into implementation
   const enhancedImplementation: FrontendModule = {
     ...implementation,
-    name: 'MMM-Hello-World-Ts',
+    name: 'MMM-CabinStats',
     config: {
       text: 'Hello Ismar',
       updateInterval: 10000,

@@ -1,18 +1,18 @@
 {
-  "name": "mmm-hello-world-ts",
+  "name": "mmm-cabinstats",
   "version": "1.0.0",
-  "description": "Magic Mirror example module in Typescript",
-  "main": "MMM-Hello-World-Ts.js",
+  "description": "MagicMirror module showing live cabin visit stats and fun facts",
+  "main": "MMM-CabinStats.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ismarslomic/MMM-Hello-World-Ts.git"
+    "url": "git+https://github.com/ismarslomic/MMM-CabinStats.git"
   },
   "author": "ismar@slomic.no",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/ismarslomic/MMM-Hello-World-Ts/issues"
+    "url": "https://github.com/ismarslomic/MMM-CabinStats/issues"
   },
-  "homepage": "https://github.com/ismarslomic/MMM-Hello-World-Ts",
+  "homepage": "https://github.com/ismarslomic/MMM-CabinStats",
   "scripts": {
     "build": "rollup -c",
     "lint": "eslint .",
@@ -29,7 +29,7 @@
     "test:unit:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit -p tsconfig.frontend.json && tsc --noEmit -p tsconfig.backend.json && tsc --noEmit -p tsconfig.unit.json && tsc -p __tests__/e2e/tsconfig.json",
     "lint:css": "stylelint \"css/**/*.css\"",
-    "check:generated": "npm run build && git diff --exit-code -- MMM-Hello-World-Ts.js MMM-Hello-World-Ts.js.map node_helper.js node_helper.js.map"
+    "check:generated": "npm run build && git diff --exit-code -- MMM-CabinStats.js MMM-CabinStats.js.map node_helper.js node_helper.js.map"
   },
   "overrides": {
     "@microsoft/eslint-formatter-sarif": {

@@ -1,9 +1,9 @@
 /*! *****************************************************************************
-  mmm-hello-world-ts
+  mmm-cabinstats
   Version 1.0.0
 
-  Magic Mirror example module in Typescript
-  Please submit bugs at https://github.com/ismarslomic/MMM-Hello-World-Ts/issues
+  MagicMirror module showing live cabin visit stats and fun facts
+  Please submit bugs at https://github.com/ismarslomic/MMM-CabinStats/issues
 
   (c) ismar@slomic.no
   Licence: MIT
@@ -78,10 +78,10 @@
             this.updateDom();
         },
         getStyles() {
-            return [this.file('css/MMM-Hello-World-Ts.css')];
+            return [this.file('css/MMM-CabinStats.css')];
         },
         getTemplate() {
-            return 'templates/MMM-Hello-World-Ts.njk';
+            return 'templates/MMM-CabinStats.njk';
         },
         getTemplateData() {
             const lastUpdated = this.state?.lastUpdated;
@@ -149,7 +149,7 @@
             this.sendSocketNotification(SocketNotification.GREETINGS_TEXT_REQUEST, request);
         },
     };
-    Module.register('MMM-Hello-World-Ts', frontendModule);
+    Module.register('MMM-CabinStats', frontendModule);
 
 }));
-//# sourceMappingURL=MMM-Hello-World-Ts.js.map
+//# sourceMappingURL=MMM-CabinStats.js.map

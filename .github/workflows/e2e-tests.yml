@@ -43,12 +43,12 @@ jobs:
 
       - name: Copy the newly built module into MagicMirror
         run: |
-          mkdir -p MagicMirror/modules/MMM-Hello-World-Ts
+          mkdir -p MagicMirror/modules/MMM-CabinStats
           rsync -a --exclude=.git --exclude=node_modules --exclude=MagicMirror --exclude=coverage \
-            ./ MagicMirror/modules/MMM-Hello-World-Ts/
+            ./ MagicMirror/modules/MMM-CabinStats/
 
       - name: Install module runtime dependencies
-        working-directory: MagicMirror/modules/MMM-Hello-World-Ts
+        working-directory: MagicMirror/modules/MMM-CabinStats
         run: npm ci --omit=dev
 
       - name: Configure MagicMirror for the tests

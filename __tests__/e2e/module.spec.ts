@@ -1,29 +1,29 @@
 import { expect, test, type Page } from '@playwright/test'
 
-test.describe('MMM-Hello-World-Ts', () => {
+test.describe('MMM-CabinStats', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
   })
 
   async function assertIndependentGreetings(page: Page) {
-    const greetings = page.locator('.MMM-Hello-World-Ts .green')
+    const greetings = page.locator('.MMM-CabinStats .green')
     await expect(greetings).toHaveCount(2)
-    await expect(greetings.nth(0)).toHaveText('MMM-Hello-World-Ts says: Hello world Ismar!')
+    await expect(greetings.nth(0)).toHaveText('MMM-CabinStats says: Hello world Ismar!')
     await expect(greetings.nth(0)).toBeVisible()
-    await expect(greetings.nth(1)).toHaveText('MMM-Hello-World-Ts says: Hello second instance!')
+    await expect(greetings.nth(1)).toHaveText('MMM-CabinStats says: Hello second instance!')
     await expect(greetings.nth(1)).toBeVisible()
   }
 
   test('renders separate greetings for two configured instances', async ({ page }) => {
     await assertIndependentGreetings(page)
-    const modules = page.locator('.MMM-Hello-World-Ts')
+    const modules = page.locator('.MMM-CabinStats')
     await expect(modules.nth(0)).not.toContainText('Invalid Date')
     await expect(modules.nth(1)).not.toContainText('Invalid Date')
   })
 
   test('keeps instance data independent after a polling update', async ({ page }) => {
     await assertIndependentGreetings(page)
-    const timestamp = page.locator('.MMM-Hello-World-Ts .teal').first()
+    const timestamp = page.locator('.MMM-CabinStats .teal').first()
     const initialTimestamp = await timestamp.textContent()
     if (initialTimestamp === null) {
       throw new Error('The module timestamp must contain text before polling')

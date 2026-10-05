@@ -11,7 +11,7 @@ export default {
       `prettier --write ${quotedFiles}`,
       'npm run build',
       // Generated bundles are outside lint-staged's matched TypeScript files.
-      'git add -- MMM-Hello-World-Ts.js MMM-Hello-World-Ts.js.map node_helper.js node_helper.js.map',
+      'git add -- MMM-CabinStats.js MMM-CabinStats.js.map node_helper.js node_helper.js.map',
     ]
   },
   '*.{js,mjs}': ['eslint --fix --no-warn-ignored', 'prettier --write'],

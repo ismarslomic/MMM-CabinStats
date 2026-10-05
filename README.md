@@ -1,10 +1,10 @@
 # Magic Mirror module: Hello world
 
-[![CodeQL](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/codeql.yml/badge.svg)](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/codeql.yml)
-[![ESLint](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/eslint.yml/badge.svg)](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/eslint.yml)
-[![ESLint](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/build.yml/badge.svg)](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/build.yml)
-[![E2E tests](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/ismarslomic/MMM-Hello-World-Ts/actions/workflows/e2e-tests.yml)
-[![Unit tests](https://codecov.io/gh/ismarslomic/MMM-Hello-World-Ts/branch/main/graph/badge.svg?token=MQPHY294KB)](https://codecov.io/gh/ismarslomic/MMM-Hello-World-Ts)
+[![CodeQL](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/codeql.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/codeql.yml)
+[![ESLint](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/eslint.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/eslint.yml)
+[![ESLint](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/build.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/build.yml)
+[![E2E tests](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/e2e-tests.yml)
+[![Unit tests](https://codecov.io/gh/ismarslomic/MMM-CabinStats/branch/main/graph/badge.svg)](https://codecov.io/gh/ismarslomic/MMM-CabinStats)
 
 > Simple Magic Mirror module written in Typescript demonstrating use of
 > the [core module file ](https://docs.magicmirror.builders/development/core-module-file.html#available-module-instance-properties) (
@@ -24,12 +24,12 @@
 1. Navigate to the `MagicMirror/modules` directory and execute the following command
 
    ```sh
-   git clone https://github.com/ismarslomic/MMM-Hello-World-Ts.git
+   git clone https://github.com/ismarslomic/MMM-CabinStats.git
    ```
 
-2. Change into the `MMM-Hello-World-Ts` module folder and install runtime dependencies with
+2. Change into the `MMM-CabinStats` module folder and install runtime dependencies with
    ```sh
-   cd MMM-Hello-World-Ts
+   cd MMM-CabinStats
    npm run install:dep
    ```
 
@@ -42,7 +42,7 @@ the `config/config.js` file:
 var config = {
   modules: [
     {
-      module: 'MMM-Hello-World-Ts',
+      module: 'MMM-CabinStats',
       position: 'top_left',
       config: {
         text: 'Hello world Ismar!',
@@ -79,7 +79,7 @@ A scoped npm override keeps deprecated packages out of the development install w
 
 - `@microsoft/eslint-formatter-sarif` uses the project's ESLint version through `$eslint` instead of installing end-of-life ESLint 8. Remove this override when the formatter supports the project's ESLint version in its dependency or peer dependency range.
 
-When changing the override, run `npm ci`, lint reporting, and unit tests with coverage. Check that the lockfile contains no deprecated packages and that coverage still includes the same source files. See [issue #792](https://github.com/ismarslomic/MMM-Hello-World-Ts/issues/792) for the investigation.
+When changing the override, run `npm ci`, lint reporting, and unit tests with coverage. Check that the lockfile contains no deprecated packages and that coverage still includes the same source files. See [issue #792](https://github.com/ismarslomic/MMM-CabinStats/issues/792) for the investigation.
 
 ### Linting and formatting
 
@@ -112,7 +112,7 @@ Coverage includes `src/**/*.ts` and produces `coverage/lcov.info` for Codecov. T
 
 E2E tests run the newly built module against MagicMirror 2.38.0 using Node.js 24 and Playwright Chromium. The fixture uses two instances to verify socket isolation and subsequent polling updates. Playwright starts the server, waits for readiness, and stops it after the tests; locally it can reuse a running server.
 
-To run locally, place a MagicMirror 2.38.0 checkout in `MagicMirror/`, install its server dependencies with `npm ci --omit=dev --omit=optional`, build and install this module in `MagicMirror/modules/MMM-Hello-World-Ts`, and copy `__tests__/e2e/mm/config.js` to `MagicMirror/config/config.js`. Then install the test browser and run:
+To run locally, place a MagicMirror 2.38.0 checkout in `MagicMirror/`, install its server dependencies with `npm ci --omit=dev --omit=optional`, build and install this module in `MagicMirror/modules/MMM-CabinStats`, and copy `__tests__/e2e/mm/config.js` to `MagicMirror/config/config.js`. Then install the test browser and run:
 
 ```bash
 npx playwright install chromium

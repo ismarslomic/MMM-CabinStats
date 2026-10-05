@@ -1,9 +1,9 @@
 /*! *****************************************************************************
-  mmm-hello-world-ts
+  mmm-cabinstats
   Version 1.0.0
 
-  Magic Mirror example module in Typescript
-  Please submit bugs at https://github.com/ismarslomic/MMM-Hello-World-Ts/issues
+  MagicMirror module showing live cabin visit stats and fun facts
+  Please submit bugs at https://github.com/ismarslomic/MMM-CabinStats/issues
 
   (c) ismar@slomic.no
   Licence: MIT

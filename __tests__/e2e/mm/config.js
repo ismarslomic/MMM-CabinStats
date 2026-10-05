@@ -7,12 +7,12 @@ const config = {
   logLevel: ['INFO', 'LOG', 'WARN', 'ERROR'],
   modules: [
     {
-      module: 'MMM-Hello-World-Ts',
+      module: 'MMM-CabinStats',
       position: 'top_left',
       config: { text: 'Hello world Ismar!' },
     },
     {
-      module: 'MMM-Hello-World-Ts',
+      module: 'MMM-CabinStats',
       position: 'top_right',
       config: { text: 'Hello second instance!' },
     },

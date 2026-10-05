@@ -21,7 +21,7 @@ export interface FrontendModule {
 
   /**
    * @official
-   * Unique identifier of this module instance, e.g. `module_1_MMM-Hello-World-Ts`.
+   * Unique identifier of this module instance, e.g. `module_1_MMM-CabinStats`.
    * Distinguishes multiple instances of the same module.
    */
   identifier: MagicMirrorModule['identifier']

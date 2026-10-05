@@ -26,11 +26,11 @@ const frontendModule: Omit<
   },
 
   getStyles() {
-    return [this.file('css/MMM-Hello-World-Ts.css')]
+    return [this.file('css/MMM-CabinStats.css')]
   },
 
   getTemplate(): string {
-    return 'templates/MMM-Hello-World-Ts.njk'
+    return 'templates/MMM-CabinStats.njk'
   },
 
   getTemplateData(): { text: string; lastUpdated: string } {
@@ -111,4 +111,4 @@ const frontendModule: Omit<
   },
 }
 
-Module.register('MMM-Hello-World-Ts', frontendModule)
+Module.register('MMM-CabinStats', frontendModule)

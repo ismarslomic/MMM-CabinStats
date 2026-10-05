@@ -13,7 +13,7 @@ export default defineConfig(
       'playwright-report/**',
       'test-results/**',
       'MagicMirror/**',
-      'MMM-Hello-World-Ts.js',
+      'MMM-CabinStats.js',
       'node_helper.js',
     ],
   },
