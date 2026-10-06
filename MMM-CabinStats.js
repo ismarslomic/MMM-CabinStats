@@ -56,8 +56,26 @@
             !Number.isNaN(new Date(payload.lastUpdated).getTime()));
     }
 
+    /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
+    /** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
+    const defaultConfig = {
+        apiBaseUrl: undefined,
+        updateInterval: 600_000,
+        requestTimeout: 10_000,
+        guestFactInterval: 18_000,
+        cabinFactInterval: 45_000,
+        showNextVisit: true,
+        showCabinFacts: true,
+        pauseWhenHidden: false,
+        animationSpeed: 1_000,
+    };
+
     var SocketNotification;
     (function (SocketNotification) {
+        SocketNotification["LIVE_STATS_REQUEST"] = "LIVE_STATS_REQUEST";
+        SocketNotification["LIVE_STATS_RESPONSE"] = "LIVE_STATS_RESPONSE";
+        SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
+        // Hello World leftovers, removed together with Greetings.ts when the frontend is ported (phase 4).
         SocketNotification["GREETINGS_TEXT_REQUEST"] = "GREETINGS_TEXT_REQUEST";
         SocketNotification["GREETINGS_TEXT_RESPONSE"] = "GREETINGS_TEXT_RESPONSE";
     })(SocketNotification || (SocketNotification = {}));
@@ -65,17 +83,7 @@
     // JavaScript timers use a signed 32-bit delay; larger values overflow.
     const maximumTimerDelay = 2 ** 31 - 1;
     const frontendModule = {
-        defaults: {
-            apiBaseUrl: undefined,
-            updateInterval: 600_000,
-            requestTimeout: 10_000,
-            guestFactInterval: 18_000,
-            cabinFactInterval: 45_000,
-            showNextVisit: true,
-            showCabinFacts: true,
-            pauseWhenHidden: false,
-            animationSpeed: 1_000,
-        },
+        defaults: defaultConfig,
         start() {
             Log__namespace.debug(`${this.name} is starting`);
             this.state = { text: this.config.text, lastUpdated: null };

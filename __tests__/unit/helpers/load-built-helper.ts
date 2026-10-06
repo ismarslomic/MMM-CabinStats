@@ -13,6 +13,10 @@ export function loadBuiltHelper(): new () => NodeHelperModule {
   runInNewContext(readFileSync(helperPath, 'utf8'), {
     module,
     Date,
+    // The bundle runs in a fresh context without Node's web globals; delegate so tests can stub them.
+    URL,
+    AbortSignal,
+    fetch: (...args: Parameters<typeof fetch>) => globalThis.fetch(...args),
     require(moduleName: string) {
       if (moduleName === 'node_helper') return NodeHelperMock
       if (moduleName === 'logger') return Log

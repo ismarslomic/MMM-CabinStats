@@ -4,7 +4,9 @@
 import NodeHelper from 'node_helper'
 import * as Log from 'logger'
 import { SocketNotification } from '../constants/SocketNotifications'
-import { GreetingsResponse, isGreetingsRequest } from '../types/Greetings'
+import { hasApiBaseUrl, resolveConfig } from '../types/Config'
+import { LiveStatsError, LiveStatsResponse, isLiveStatsRequest } from '../types/Messages'
+import { fetchLiveStats } from './fetchLiveStats'
 
 export default NodeHelper.create({
   start(): void {
@@ -12,26 +14,39 @@ export default NodeHelper.create({
   },
 
   stop(): void {
-    Log.debug(`${this.name} is started!`)
+    Log.debug(`${this.name} is stopped!`)
   },
 
   socketNotificationReceived(notification: string, request: unknown): void {
-    if (notification === SocketNotification.GREETINGS_TEXT_REQUEST) {
-      if (!isGreetingsRequest(request)) {
-        Log.error(`${this.name} received an invalid greeting request`)
-        return
-      }
-      Log.debug(
-        `${this.name} received a socket notification: '${notification}' with config: ${JSON.stringify(request)}`
-      )
-      const payload: GreetingsResponse = {
-        identifier: request.identifier,
-        text: `${this.name} says: ${request.config.text}`,
-        lastUpdated: Date.now(),
-      }
-      this.sendSocketNotification(SocketNotification.GREETINGS_TEXT_RESPONSE, payload)
-    } else {
+    if (notification !== SocketNotification.LIVE_STATS_REQUEST) {
       Log.error(`${this.name} received unknown socket notification: '${notification}'`)
+      return
     }
+    if (!isLiveStatsRequest(request)) {
+      Log.error(`${this.name} received an invalid live stats request`)
+      return
+    }
+    void this.loadLiveStats(request.identifier, request.config)
+  },
+
+  async loadLiveStats(identifier: string, rawConfig: unknown): Promise<void> {
+    const config = resolveConfig(rawConfig)
+    if (!hasApiBaseUrl(config)) {
+      this.sendError(identifier, 'apiBaseUrl is missing or not a valid http(s) url')
+      return
+    }
+    try {
+      const liveStats = await fetchLiveStats(config)
+      const payload: LiveStatsResponse = { identifier, liveStats, fetchedAt: Date.now() }
+      this.sendSocketNotification(SocketNotification.LIVE_STATS_RESPONSE, payload)
+    } catch (error) {
+      this.sendError(identifier, error instanceof Error ? error.message : String(error))
+    }
+  },
+
+  sendError(identifier: string, message: string): void {
+    Log.error(`${this.name} could not load live stats: ${message}`)
+    const payload: LiveStatsError = { identifier, message }
+    this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload)
   },
 })

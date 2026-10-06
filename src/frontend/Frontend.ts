@@ -1,6 +1,7 @@
 import { GreetingsRequest, isGreetingsResponse } from '../types/Greetings'
 import { FrontendModule } from '../types/FrontendModule'
 import * as Log from 'logger'
+import { defaultConfig } from '../types/Config'
 import { SocketNotification } from '../constants/SocketNotifications'
 
 // JavaScript timers use a signed 32-bit delay; larger values overflow.
@@ -11,17 +12,7 @@ const frontendModule: Omit<
   'name' | 'identifier' | 'config' | 'file' | 'updateDom' | 'sendSocketNotification'
 > &
   ThisType<FrontendModule> = {
-  defaults: {
-    apiBaseUrl: undefined,
-    updateInterval: 600_000,
-    requestTimeout: 10_000,
-    guestFactInterval: 18_000,
-    cabinFactInterval: 45_000,
-    showNextVisit: true,
-    showCabinFacts: true,
-    pauseWhenHidden: false,
-    animationSpeed: 1_000,
-  },
+  defaults: defaultConfig,
 
   start(): void {
     Log.debug(`${this.name} is starting`)
