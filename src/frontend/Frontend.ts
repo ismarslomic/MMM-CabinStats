@@ -12,9 +12,15 @@ const frontendModule: Omit<
 > &
   ThisType<FrontendModule> = {
   defaults: {
-    text: 'Hello World!',
-    updateInterval: 10000,
+    apiBaseUrl: undefined,
+    updateInterval: 600_000,
+    requestTimeout: 10_000,
+    guestFactInterval: 18_000,
+    cabinFactInterval: 45_000,
+    showNextVisit: true,
+    showCabinFacts: true,
     pauseWhenHidden: false,
+    animationSpeed: 1_000,
   },
 
   start(): void {
