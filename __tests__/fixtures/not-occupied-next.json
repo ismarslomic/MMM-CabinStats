@@ -1,0 +1,82 @@
+{
+  "isOccupied": false,
+  "currentReservation": null,
+  "nextReservation": {
+    "startDate": "2026-11-20",
+    "endDate": "2026-11-23",
+    "guests": [
+      {
+        "guestId": "guest-1",
+        "firstName": "Anna",
+        "lastName": "Testesen",
+        "age": 44,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-1/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 14,
+          "totalDays": 52,
+          "visitsRank": 1,
+          "daysRank": 1
+        }
+      },
+      {
+        "guestId": "guest-4",
+        "firstName": "Dora",
+        "lastName": "Eksempel",
+        "age": 28,
+        "isFamily": false,
+        "avatarUrl": "/api/guests/guest-4/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 4,
+          "totalDays": 10,
+          "visitsRank": 3,
+          "daysRank": 3
+        }
+      }
+    ],
+    "daysUntil": 14
+  },
+  "allTimeVisits": 120,
+  "allTimeNights": 300,
+  "allTimeUniqueGuests": 25,
+  "guestFunFacts": [],
+  "cabinFunFacts": [
+    {
+      "guestId": null,
+      "text": "Hytta har vært besøkt 120 ganger.",
+      "priority": 60
+    },
+    {
+      "guestId": null,
+      "text": "Det er 300 netter totalt.",
+      "priority": 40
+    }
+  ],
+  "nextVisitFunFacts": [
+    {
+      "guestId": "guest-4",
+      "text": "Dora kommer tilbake etter 8 måneder.",
+      "priority": 65
+    }
+  ]
+}

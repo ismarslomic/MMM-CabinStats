@@ -1,0 +1,11 @@
+{
+  "isOccupied": false,
+  "currentReservation": null,
+  "nextReservation": null,
+  "allTimeVisits": 120,
+  "allTimeNights": 300,
+  "allTimeUniqueGuests": 25,
+  "guestFunFacts": [],
+  "cabinFunFacts": [],
+  "nextVisitFunFacts": []
+}

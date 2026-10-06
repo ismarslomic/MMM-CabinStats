@@ -1,0 +1,87 @@
+{
+  "isOccupied": true,
+  "currentReservation": {
+    "startDate": "2026-10-04",
+    "endDate": "2026-10-08",
+    "guests": [
+      {
+        "guestId": "guest-1",
+        "firstName": "Anna",
+        "lastName": "Testesen",
+        "age": 44,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-1/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 14,
+          "totalDays": 52,
+          "visitsRank": 1,
+          "daysRank": 1
+        }
+      },
+      {
+        "guestId": "guest-2",
+        "firstName": "Bjørn",
+        "lastName": "Testesen",
+        "age": 46,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-2/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 12,
+          "totalDays": 40,
+          "visitsRank": 2,
+          "daysRank": 2
+        }
+      }
+    ],
+    "remainingNights": 2
+  },
+  "nextReservation": null,
+  "allTimeVisits": 120,
+  "allTimeNights": 300,
+  "allTimeUniqueGuests": 25,
+  "guestFunFacts": [
+    {
+      "guestId": null,
+      "text": "Familien har 52 netter sammen.",
+      "priority": 95
+    },
+    {
+      "guestId": "guest-2",
+      "text": "Bjørn er nummer 2 på listen.",
+      "priority": 60
+    }
+  ],
+  "cabinFunFacts": [
+    {
+      "guestId": null,
+      "text": "Hytta har vært besøkt 120 ganger.",
+      "priority": 60
+    },
+    {
+      "guestId": null,
+      "text": "Det er 300 netter totalt.",
+      "priority": 40
+    }
+  ],
+  "nextVisitFunFacts": []
+}

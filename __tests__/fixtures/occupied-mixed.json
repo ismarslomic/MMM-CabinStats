@@ -1,0 +1,176 @@
+{
+  "isOccupied": true,
+  "currentReservation": {
+    "startDate": "2026-10-04",
+    "endDate": "2026-10-08",
+    "guests": [
+      {
+        "guestId": "guest-1",
+        "firstName": "Anna",
+        "lastName": "Testesen",
+        "age": 44,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-1/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 14,
+          "totalDays": 52,
+          "visitsRank": 1,
+          "daysRank": 1
+        }
+      },
+      {
+        "guestId": "guest-2",
+        "firstName": "Bjørn",
+        "lastName": "Testesen",
+        "age": 46,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-2/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 12,
+          "totalDays": 40,
+          "visitsRank": 2,
+          "daysRank": 2
+        }
+      },
+      {
+        "guestId": "guest-3",
+        "firstName": "Carl",
+        "lastName": "Eksempel",
+        "age": 30,
+        "isFamily": false,
+        "avatarUrl": "/api/guests/guest-3/avatar",
+        "isFirstVisit": true,
+        "firstVisitDate": null,
+        "lastVisitDate": null,
+        "yearsVisited": [],
+        "currentYear": {
+          "totalVisits": 0,
+          "totalDays": 0,
+          "visitsRank": null,
+          "daysRank": null
+        },
+        "allTime": {
+          "totalVisits": 0,
+          "totalDays": 0,
+          "visitsRank": null,
+          "daysRank": null
+        }
+      }
+    ],
+    "remainingNights": 2
+  },
+  "nextReservation": {
+    "startDate": "2026-11-20",
+    "endDate": "2026-11-23",
+    "guests": [
+      {
+        "guestId": "guest-1",
+        "firstName": "Anna",
+        "lastName": "Testesen",
+        "age": 44,
+        "isFamily": true,
+        "avatarUrl": "/api/guests/guest-1/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 14,
+          "totalDays": 52,
+          "visitsRank": 1,
+          "daysRank": 1
+        }
+      },
+      {
+        "guestId": "guest-4",
+        "firstName": "Dora",
+        "lastName": "Eksempel",
+        "age": 28,
+        "isFamily": false,
+        "avatarUrl": "/api/guests/guest-4/avatar",
+        "isFirstVisit": false,
+        "firstVisitDate": "2019-07-12",
+        "lastVisitDate": "2026-03-01",
+        "yearsVisited": [2026, 2025, 2019],
+        "currentYear": {
+          "totalVisits": 3,
+          "totalDays": 9,
+          "visitsRank": 2,
+          "daysRank": 2
+        },
+        "allTime": {
+          "totalVisits": 4,
+          "totalDays": 10,
+          "visitsRank": 3,
+          "daysRank": 3
+        }
+      }
+    ],
+    "daysUntil": 14
+  },
+  "allTimeVisits": 120,
+  "allTimeNights": 300,
+  "allTimeUniqueGuests": 25,
+  "guestFunFacts": [
+    {
+      "guestId": "guest-1",
+      "text": "Anna har vært på hytta flest ganger.",
+      "priority": 90
+    },
+    {
+      "guestId": "guest-3",
+      "text": "Dette er Carls første besøk!",
+      "priority": 80
+    },
+    {
+      "guestId": null,
+      "text": "Gjengen har vært samlet 5 ganger.",
+      "priority": 50
+    }
+  ],
+  "cabinFunFacts": [
+    {
+      "guestId": null,
+      "text": "Hytta har vært besøkt 120 ganger.",
+      "priority": 60
+    },
+    {
+      "guestId": null,
+      "text": "Det er 300 netter totalt.",
+      "priority": 40
+    }
+  ],
+  "nextVisitFunFacts": [
+    {
+      "guestId": null,
+      "text": "Neste besøk er om 14 dager.",
+      "priority": 70
+    }
+  ]
+}

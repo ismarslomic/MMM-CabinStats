@@ -2,7 +2,8 @@
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "lib": ["DOM", "ESNext"],
-    "types": ["node", "magicmirror-module"]
+    "types": ["node", "magicmirror-module"],
+    "resolveJsonModule": true
   },
   "include": ["src/**/*.ts", "__tests__/unit/**/*.ts", "vitest.config.mts"],
   "exclude": []
