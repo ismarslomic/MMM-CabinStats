@@ -241,3 +241,6 @@ eslint-results.sarif
 playwright-report
 test-results
 MagicMirror
+
+# Local planning notes
+.claude/plans/**
