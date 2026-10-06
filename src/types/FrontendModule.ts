@@ -1,6 +1,18 @@
 import { Config } from './Config'
+import { LiveStats } from './LiveStats'
+import { ViewModel } from '../frontend/viewModel'
 
-export type GreetingsState = { text: string; lastUpdated: number | null }
+/** What the frontend remembers between renders. */
+export type FrontendState = {
+  /** Latest valid stats, `undefined` until the first response. Kept when later requests fail. */
+  liveStats?: LiveStats
+  /** When `liveStats` was fetched, as a Unix timestamp in milliseconds. */
+  fetchedAt?: number
+  /** Index into the interleaved guest facts of the current reservation. */
+  guestFactIndex: number
+  /** Index into the cabin facts. */
+  cabinFactIndex: number
+}
 
 type MagicMirrorModule = Module.ModuleProperties<Config>
 
@@ -62,10 +74,9 @@ export interface FrontendModule {
 
   /**
    * @custom
-   * The latest greeting received from the node helper. Used by `getTemplateData()` when rendering.
-   * `lastUpdated` is `null` until the first response has arrived.
+   * The latest stats received from the node helper and the rotation indices. Used by `getTemplateData()`.
    */
-  state?: GreetingsState
+  state?: FrontendState
 
   /**
    * @custom
@@ -73,6 +84,18 @@ export interface FrontendModule {
    * `undefined` when polling is not running.
    */
   pollingTimer?: ReturnType<typeof setInterval>
+
+  /**
+   * @custom
+   * Handle of the interval timer that rotates the guest facts. `undefined` when not running.
+   */
+  guestFactTimer?: ReturnType<typeof setInterval>
+
+  /**
+   * @custom
+   * Handle of the interval timer that rotates the cabin facts. `undefined` when not running.
+   */
+  cabinFactTimer?: ReturnType<typeof setInterval>
 
   /**
    * @custom
@@ -109,7 +132,7 @@ export interface FrontendModule {
    * Returns the data object passed to the Nunjucks template returned by `getTemplate()`.
    * Used by the default `getDom()` implementation.
    */
-  getTemplateData(): { text: string; lastUpdated: string }
+  getTemplateData(): ViewModel
 
   /**
    * @official
@@ -138,8 +161,8 @@ export interface FrontendModule {
   /**
    * @custom
    * Starts the interval timer that calls `loadData()` every `config.updateInterval` ms.
-   * Any running timer is stopped first, and nothing is started while polling is suspended.
-   * An invalid `updateInterval` is logged and replaced by the default.
+   * Any running timer is stopped first, and nothing is started while polling is suspended or without a valid
+   * `apiBaseUrl`. An invalid `updateInterval` is replaced by the default.
    */
   startPolling(): void
 
@@ -152,7 +175,34 @@ export interface FrontendModule {
   /**
    * @custom
    * Requests fresh data by sending this instance's identifier and config to the node helper
-   * as a socket notification. The response arrives in `socketNotificationReceived()`.
+   * as a socket notification. Does nothing without a valid `apiBaseUrl`. The response arrives in
+   * `socketNotificationReceived()`.
    */
   loadData(): void
+
+  /**
+   * @custom
+   * Starts the timers that rotate the guest facts (`config.guestFactInterval`) and the cabin facts
+   * (`config.cabinFactInterval`). Running timers are stopped first, and nothing is started while suspended or
+   * without a valid `apiBaseUrl`.
+   */
+  startRotation(): void
+
+  /**
+   * @custom
+   * Stops both fact rotation timers. Safe to call when they are not running.
+   */
+  stopRotation(): void
+
+  /**
+   * @custom
+   * Moves to the next guest fact and re-renders. Does nothing when there is at most one fact to show.
+   */
+  rotateGuestFact(): void
+
+  /**
+   * @custom
+   * Moves to the next cabin fact and re-renders. Does nothing when there is at most one fact to show.
+   */
+  rotateCabinFact(): void
 }
