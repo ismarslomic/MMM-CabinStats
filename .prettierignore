@@ -4,6 +4,8 @@ node_modules
 .prettierignore
 /MMM-CabinStats.js
 /node_helper.js
+/src/types/api.generated.ts
+/openapi
 *.map
 *.njk
 *.png
