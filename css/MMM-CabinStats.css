@@ -4,12 +4,124 @@ div.MMM-CabinStats {
 }
 /* stylelint-enable selector-class-pattern */
 
-div.green {
-  --font-primary: 'Roboto Condensed';
+.cabin-stats {
+  --cabin-accent: #ffc83d;
+  --cabin-ring: rgb(255 255 255 / 85%);
+  --cabin-avatar-large: 110px;
+  --cabin-avatar-small: 48px;
 
-  color: #ccff90;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 560px;
 }
 
-div.teal {
-  color: #a7ffeb;
+.cabin-accent {
+  color: var(--cabin-accent);
+}
+
+.cabin-guests {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.cabin-guests-small {
+  gap: 10px;
+}
+
+.cabin-guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.cabin-avatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border: 2px solid var(--cabin-ring);
+  border-radius: 50%;
+  background: #2a2a2a;
+}
+
+.cabin-avatar-large {
+  width: var(--cabin-avatar-large);
+  height: var(--cabin-avatar-large);
+  font-size: 40px;
+}
+
+.cabin-avatar-small {
+  width: var(--cabin-avatar-small);
+  height: var(--cabin-avatar-small);
+  border-width: 1px;
+  font-size: 18px;
+}
+
+.cabin-guest-first .cabin-avatar {
+  border-color: var(--cabin-accent);
+  box-shadow: 0 0 0 3px var(--cabin-accent);
+}
+
+/* The initials sit behind the photo and show when the image is missing or fails to load. */
+.cabin-avatar-initials {
+  color: #fff;
+  font-weight: 300;
+}
+
+.cabin-avatar-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.cabin-avatar-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--cabin-accent);
+  color: #000;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.cabin-avatar-small .cabin-avatar-badge {
+  top: -4px;
+  right: -4px;
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+}
+
+.cabin-guest-name {
+  margin-top: 6px;
+}
+
+.cabin-next {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.cabin-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+}
+
+.cabin-fact-cabin {
+  margin-top: 4px;
 }

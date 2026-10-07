@@ -1,6 +1,6 @@
 import { Config } from './Config'
 import { LiveStats } from './LiveStats'
-import { ViewModel } from '../frontend/viewModel'
+import { TemplateData } from '../frontend/display'
 
 /** What the frontend remembers between renders. */
 export type FrontendState = {
@@ -132,7 +132,14 @@ export interface FrontendModule {
    * Returns the data object passed to the Nunjucks template returned by `getTemplate()`.
    * Used by the default `getDom()` implementation.
    */
-  getTemplateData(): ViewModel
+  getTemplateData(): TemplateData
+
+  /**
+   * @official
+   * Returns the translation files (relative to the module folder) per language. MagicMirror loads the one for the
+   * configured language, or the first entry when there is none, and the `translate` filter in the template uses it.
+   */
+  getTranslations(): Record<string, string>
 
   /**
    * @official

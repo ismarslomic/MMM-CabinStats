@@ -3,7 +3,8 @@ import * as Log from 'logger'
 import { defaultConfig, hasApiBaseUrl, resolveConfig } from '../types/Config'
 import { SocketNotification } from '../constants/SocketNotifications'
 import { isLiveStatsError, isLiveStatsResponse, LiveStatsRequest } from '../types/Messages'
-import { buildViewModel, ViewModel } from './viewModel'
+import { buildViewModel } from './viewModel'
+import { TemplateData, toTemplateData } from './display'
 import { clampIndex, interleaveGuestFacts, nextIndex } from './rotation'
 
 const frontendModule: Omit<
@@ -41,13 +42,20 @@ const frontendModule: Omit<
     return 'templates/MMM-CabinStats.njk'
   },
 
-  getTemplateData(): ViewModel {
-    return buildViewModel({
-      config: resolveConfig(this.config),
-      liveStats: this.state?.liveStats,
-      guestFactIndex: this.state?.guestFactIndex ?? 0,
-      cabinFactIndex: this.state?.cabinFactIndex ?? 0,
-    })
+  getTemplateData(): TemplateData {
+    return toTemplateData(
+      buildViewModel({
+        config: resolveConfig(this.config),
+        liveStats: this.state?.liveStats,
+        guestFactIndex: this.state?.guestFactIndex ?? 0,
+        cabinFactIndex: this.state?.cabinFactIndex ?? 0,
+      })
+    )
+  },
+
+  getTranslations(): Record<string, string> {
+    // Norwegian only: listing it as the single entry also makes it the fallback for every other language.
+    return { nb: 'translations/nb.json' }
   },
 
   socketNotificationReceived(notificationIdentifier: string, payload: unknown): void {

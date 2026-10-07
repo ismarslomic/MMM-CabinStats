@@ -361,6 +361,16 @@ describe('Frontend', () => {
       expect(getTemplate()).toEqual('templates/MMM-CabinStats.njk')
     })
   })
+
+  describe('getTranslations', () => {
+    it('offers Norwegian only, which is also the fallback', () => {
+      const {
+        implementation: { getTranslations },
+      } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall)
+
+      expect(getTranslations()).toEqual({ nb: 'translations/nb.json' })
+    })
+  })
 })
 
 const checkAndExtractRegistration = (call?: unknown, configOverrides: Record<string, unknown> = {}) => {

@@ -1,0 +1,17 @@
+{
+  "CONFIG_ERROR": "MMM-CabinStats: sett apiBaseUrl i config.js",
+  "HEADING_OCCUPIED": "Velkommen til hytta",
+  "STAY_NIGHTS_LEFT_ONE": "1 natt igjen",
+  "STAY_NIGHTS_LEFT_OTHER": "{count} netter igjen",
+  "STAY_LAST_DAY": "Siste dag",
+  "VISIT_NUMBER": "besøk nr. {count}",
+  "FIRST_VISIT": "Første besøk!",
+  "TOP_VISITOR": "Hyttas største fan",
+  "HEADING_NEXT_VISIT": "Neste besøk",
+  "NEXT_VISIT_TODAY": "i dag",
+  "NEXT_VISIT_TOMORROW": "i morgen",
+  "NEXT_VISIT_IN_DAYS": "om {count} dager",
+  "TOTAL_VISITS": "besøk",
+  "TOTAL_NIGHTS": "netter",
+  "TOTAL_GUESTS": "gjester"
+}
