@@ -1,4 +1,4 @@
-# Magic Mirror module: Hello world
+# MMM-CabinStats
 
 [![CodeQL](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/codeql.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/codeql.yml)
 [![ESLint](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/eslint.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/eslint.yml)
@@ -6,18 +6,27 @@
 [![E2E tests](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/ismarslomic/MMM-CabinStats/actions/workflows/e2e-tests.yml)
 [![Unit tests](https://codecov.io/gh/ismarslomic/MMM-CabinStats/branch/main/graph/badge.svg)](https://codecov.io/gh/ismarslomic/MMM-CabinStats)
 
-> Simple Magic Mirror module written in Typescript demonstrating use of
-> the [core module file ](https://docs.magicmirror.builders/development/core-module-file.html#available-module-instance-properties) (
-> frontend)
-> and [node helper](https://docs.magicmirror.builders/development/node-helper.html) (backend) in addition to using
-> the [nunjucks](https://mozilla.github.io/nunjucks/) templates for rendering data.
+> [MagicMirror²](https://magicmirror.builders) module that shows live cabin stats and fun facts for the guests: who is
+> at the cabin now, how many visits it is for each of them, who comes next, and rotating fun facts. Written in
+> TypeScript.
 >
-> The transpiled JavaScript files should work in the same way as the original JavaScript
-> module [MMM-CabinStats](https://github.com/ismarslomic/MMM-CabinStats).
+> The module needs a compatible backend. It only fetches, selects, rotates and renders; all fact texts are computed
+> by the backend. See [Backend API](#backend-api).
 
-## Example screenshot
+## What it shows
 
-![Screenshot](screenshot.png)
+- **Occupied**: heading, stay dates and nights left, round guest avatars with first name and "besøk nr. X", a gold
+  badge for the top visitor, a highlighted ring and label for first-time guests, one rotating guest fun fact, the
+  next visit (dimmed, small avatars) and a rotating cabin fact.
+- **Not occupied**: "Neste besøk om N dager" with dates, small avatars and a fun fact, the all-time totals (visits,
+  nights, guests) and a rotating cabin fact. Without a next reservation only the totals and cabin facts show.
+- **Missing or invalid `apiBaseUrl`**: a short config error. Nothing is fetched.
+- **Backend unreachable**: the last good data stays on screen; nothing shows if data was never loaded. Errors are
+  logged and polling continues.
+
+Each instance of the module keeps its own data, so you can show several cabins side by side.
+UI labels are Norwegian (`translations/nb.json`, also the fallback for other languages); fun fact texts come from the
+backend as-is.
 
 ## Installing the module
 
@@ -35,8 +44,7 @@
 
 ## Using the module
 
-To use this module, add the following configuration block to the modules array in
-the `config/config.js` file:
+Add the following block to the modules array in `config/config.js`. Only `apiBaseUrl` is required:
 
 ```js
 var config = {
@@ -45,21 +53,55 @@ var config = {
       module: 'MMM-CabinStats',
       position: 'top_left',
       config: {
-        text: 'Hello world Ismar!',
+        apiBaseUrl: 'http://backend.example:8080',
       },
     },
   ],
 }
 ```
 
-### Polling options
+### Options
 
-| Option            | Default | Behavior                                                                                     |
-| ----------------- | ------- | -------------------------------------------------------------------------------------------- |
-| `updateInterval`  | `10000` | Milliseconds between requests. Invalid values fall back to the default.                      |
-| `pauseWhenHidden` | `false` | Set to `true` to stop polling in `suspend()` and fetch fresh data immediately in `resume()`. |
+| Option              | Default  | Behavior                                                                                 |
+| ------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `apiBaseUrl`        | none     | **Required.** Base url of the backend, `http` or `https`. A trailing slash is tolerated. |
+| `updateInterval`    | `600000` | Milliseconds between requests (the data changes slowly).                                 |
+| `requestTimeout`    | `10000`  | Milliseconds before a backend request is aborted.                                        |
+| `guestFactInterval` | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
+| `cabinFactInterval` | `45000`  | Milliseconds between cabin fun facts (30–60 s works well).                               |
+| `showNextVisit`     | `true`   | Show the upcoming reservation.                                                           |
+| `showCabinFacts`    | `true`   | Show the cabin fun facts.                                                                |
+| `pauseWhenHidden`   | `false`  | Stop polling and rotation in `suspend()` and fetch fresh data immediately in `resume()`. |
+| `animationSpeed`    | `1000`   | Milliseconds of the fade when the content changes.                                       |
 
-The default continues polling while hidden, preserving existing behavior. Repeated start or resume calls never create duplicate timers.
+Invalid values fall back to the defaults, except `apiBaseUrl`, which has no default. Repeated start or resume calls
+never create duplicate timers. There are no API keys: the backend has no authentication.
+
+### Troubleshooting
+
+- **"MMM-CabinStats: sett apiBaseUrl i config.js"**: `apiBaseUrl` is missing or not an absolute http(s) url.
+- **Nothing shows**: the backend has never answered. Check the MagicMirror log for `could not load live stats`; it
+  names the cause (network error, timeout, non-2xx status, invalid JSON, or a response that does not match the
+  contract).
+- **Initials instead of photos**: the browser showing the mirror must reach `apiBaseUrl` directly, because avatars
+  are plain `<img>` tags pointing at `apiBaseUrl` plus the guest's `avatarUrl`. Data is fetched by the MagicMirror
+  server, avatars by the browser.
+
+## Backend API
+
+The module calls `GET {apiBaseUrl}/api/stats` and expects the live stats object: `isOccupied`, `currentReservation`
+(with `guests` and `remainingNights`), `nextReservation` (with `guests` and `daysUntil`), `allTimeVisits`,
+`allTimeNights`, `allTimeUniqueGuests`, and the fact lists `guestFunFacts`, `cabinFunFacts` and `nextVisitFunFacts`.
+Dates are `YYYY-MM-DD` strings. Each guest has `guestId`, `firstName`, `lastName`, `avatarUrl` (nullable, fetched with
+`GET {apiBaseUrl}{avatarUrl}`), `isFirstVisit` and `allTime.totalVisits` / `allTime.visitsRank`.
+
+The full contract is the OpenAPI spec [`openapi/cabin-visits.json`](openapi/cabin-visits.json). The TypeScript types in
+`src/types/api.generated.ts` are generated from it, and `src/types/LiveStats.ts` adds a runtime guard that rejects
+responses that do not match.
+
+To update the contract, copy the new spec from the backend to `openapi/cabin-visits.json`, run `npm run generate:api`,
+fix any compile errors, and commit the generated file with the bundles. `npm run check:generated` fails if either is
+stale.
 
 ## Development
 
@@ -95,8 +137,6 @@ The bundles and sourcemaps are checked in so users can install without developme
 
 Rollup emits readable JavaScript without Terser minification so module authors can inspect the installed code and runtime stack traces. The frontend remains a UMD bundle using MagicMirror's `Log` global, the helper remains CommonJS with external `node_helper` and `logger` dependencies, and both keep sourcemaps.
 
-For this module, removing minification increases the frontend from 3,084 to 6,391 bytes and the helper from 1,711 to 3,268 bytes. Together that adds 4,864 bytes (1,081 bytes when gzip-compressed), a small absolute cost for readable example code and one fewer build dependency. These measurements cover the JavaScript bundles only and do not assume that MagicMirror enables compression.
-
 ### Run unit tests locally
 
 ```bash
@@ -110,7 +150,13 @@ Coverage includes `src/**/*.ts` and produces `coverage/lcov.info` for Codecov. T
 
 ### Run e2e tests locally
 
-E2E tests run the newly built module against MagicMirror 2.38.0 using Node.js 24 and Playwright Chromium. The fixture uses two instances to verify socket isolation and subsequent polling updates. Playwright starts the server, waits for readiness, and stops it after the tests; locally it can reuse a running server.
+E2E tests run the newly built module against MagicMirror 2.38.0 using Node.js 24 and Playwright Chromium. A small mock
+backend (`__tests__/e2e/mock-backend.mjs`, port 8081) serves the fixtures in `__tests__/fixtures`: the first path
+segment of `apiBaseUrl` selects the scenario, and `POST /{scenario}/control/down` or `/up` simulates an outage.
+`__tests__/e2e/mm/config.js` runs five instances (occupied, compact, config error, guest without avatar, flaky
+backend). Playwright starts both servers, waits for readiness and stops them after the tests; locally it can reuse
+running servers. Specs locate elements with `getByRole`, so the template must keep semantic elements and accessible
+names.
 
 To run locally, place a MagicMirror 2.38.0 checkout in `MagicMirror/`, install its server dependencies with `npm ci --omit=dev --omit=optional`, build and install this module in `MagicMirror/modules/MMM-CabinStats`, and copy `__tests__/e2e/mm/config.js` to `MagicMirror/config/config.js`. Then install the test browser and run:
 
