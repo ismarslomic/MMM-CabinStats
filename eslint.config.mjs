@@ -33,7 +33,14 @@ export default defineConfig(
     languageOptions: { globals: { ...globals.browser, Module: 'readonly' } },
   },
   {
-    files: ['src/backend/**/*.ts', 'scripts/**/*.mjs', '*.mjs', '*.js', 'playwright.config.ts'],
+    files: [
+      'src/backend/**/*.ts',
+      'scripts/**/*.mjs',
+      '__tests__/e2e/**/*.mjs',
+      '*.mjs',
+      '*.js',
+      'playwright.config.ts',
+    ],
     languageOptions: { globals: globals.node },
   },
   {
