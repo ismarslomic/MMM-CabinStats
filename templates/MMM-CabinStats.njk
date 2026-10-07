@@ -1,9 +1,9 @@
 {% macro avatar(guest, size) %}
-<div class="cabin-guest{% if guest.isFirstVisit %} cabin-guest-first{% endif %}">
+<li class="cabin-guest{% if guest.isFirstVisit %} cabin-guest-first{% endif %}">
   <div class="cabin-avatar cabin-avatar-{{ size }}">
-    <span class="cabin-avatar-initials">{{ guest.initials }}</span>
+    <span class="cabin-avatar-initials" aria-hidden="true">{{ guest.initials }}</span>
     {% if guest.avatarUrl %}<img class="cabin-avatar-image" src="{{ guest.avatarUrl }}" alt="">{% endif %}
-    {% if guest.isTopVisitor %}<span class="cabin-avatar-badge" title="{{ 'TOP_VISITOR' | translate }}">★</span>{% endif %}
+    {% if guest.isTopVisitor %}<span class="cabin-avatar-badge" role="img" aria-label="{{ 'TOP_VISITOR' | translate }}">★</span>{% endif %}
   </div>
   <div class="cabin-guest-name{% if size == 'small' %} small{% else %} medium bright{% endif %}">{{ guest.firstName }}</div>
   {% if size == 'large' %}
@@ -11,56 +11,56 @@
     {% if guest.isFirstVisit %}<span class="cabin-accent">{{ 'FIRST_VISIT' | translate }}</span>{% else %}{{ 'VISIT_NUMBER' | translate({ count: guest.visitNumber }) }}{% endif %}
   </div>
   {% endif %}
-</div>
+</li>
 {% endmacro %}
 
 {% if view == 'config-error' %}
-<div class="cabin-stats small dimmed">{{ 'CONFIG_ERROR' | translate }}</div>
+<p class="cabin-stats small dimmed" role="alert">{{ 'CONFIG_ERROR' | translate }}</p>
 {% elif view == 'occupied' %}
-<div class="cabin-stats">
-  <div class="cabin-heading large light bright">{{ 'HEADING_OCCUPIED' | translate }}</div>
-  <div class="cabin-stay small dimmed">
+<section class="cabin-stats" aria-label="{{ 'REGION_LABEL' | translate }}">
+  <h2 class="cabin-heading large light bright">{{ 'HEADING_OCCUPIED' | translate }}</h2>
+  <p class="cabin-stay small dimmed">
     {{ stay.dateRange }} ·
     {% if stay.remainingNights > 1 %}{{ 'STAY_NIGHTS_LEFT_OTHER' | translate({ count: stay.remainingNights }) }}
     {% elif stay.remainingNights == 1 %}{{ 'STAY_NIGHTS_LEFT_ONE' | translate }}
     {% else %}{{ 'STAY_LAST_DAY' | translate }}{% endif %}
-  </div>
-  <div class="cabin-guests">
+  </p>
+  <ul class="cabin-guests" aria-label="{{ 'GUESTS_ON_CABIN' | translate }}">
     {% for guest in guests %}{{ avatar(guest, 'large') }}{% endfor %}
-  </div>
-  {% if guestFact %}<div class="cabin-fact cabin-fact-guest medium light bright">{{ guestFact }}</div>{% endif %}
+  </ul>
+  {% if guestFact %}<p class="cabin-fact cabin-fact-guest medium light bright">{{ guestFact }}</p>{% endif %}
   {% if nextVisit %}
-  <div class="cabin-next dimmed">
-    <div class="small">{{ 'HEADING_NEXT_VISIT' | translate }} {{ nextVisit.dateRange }}</div>
-    <div class="cabin-guests cabin-guests-small">
+  <section class="cabin-next dimmed" aria-label="{{ 'HEADING_NEXT_VISIT' | translate }}">
+    <h3 class="cabin-next-heading small">{{ 'HEADING_NEXT_VISIT' | translate }} {{ nextVisit.dateRange }}</h3>
+    <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
       {% for guest in nextVisit.guests %}{{ avatar(guest, 'small') }}{% endfor %}
-    </div>
-  </div>
+    </ul>
+  </section>
   {% endif %}
-  {% if cabinFact %}<div class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</div>{% endif %}
-</div>
+  {% if cabinFact %}<p class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</p>{% endif %}
+</section>
 {% elif view == 'compact' %}
-<div class="cabin-stats">
+<section class="cabin-stats" aria-label="{{ 'REGION_LABEL' | translate }}">
   {% if nextVisit %}
-  <div class="cabin-heading large light bright">
+  <h2 class="cabin-heading large light bright">
     {{ 'HEADING_NEXT_VISIT' | translate }}
     {% if nextVisit.daysUntil <= 0 %}{{ 'NEXT_VISIT_TODAY' | translate }}
     {% elif nextVisit.daysUntil == 1 %}{{ 'NEXT_VISIT_TOMORROW' | translate }}
     {% else %}{{ 'NEXT_VISIT_IN_DAYS' | translate({ count: nextVisit.daysUntil }) }}{% endif %}
-  </div>
-  <div class="cabin-stay small dimmed">{{ nextVisit.dateRange }}</div>
-  <div class="cabin-guests cabin-guests-small">
+  </h2>
+  <p class="cabin-stay small dimmed">{{ nextVisit.dateRange }}</p>
+  <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
     {% for guest in nextVisit.guests %}{{ avatar(guest, 'small') }}{% endfor %}
-  </div>
-  {% if nextVisit.fact %}<div class="cabin-fact cabin-fact-guest medium light bright">{{ nextVisit.fact }}</div>{% endif %}
+  </ul>
+  {% if nextVisit.fact %}<p class="cabin-fact cabin-fact-guest medium light bright">{{ nextVisit.fact }}</p>{% endif %}
   {% endif %}
   {% if totals %}
-  <div class="cabin-totals small dimmed">
-    <span><span class="cabin-accent bright">{{ totals.visits }}</span> {{ 'TOTAL_VISITS' | translate }}</span>
-    <span><span class="cabin-accent bright">{{ totals.nights }}</span> {{ 'TOTAL_NIGHTS' | translate }}</span>
-    <span><span class="cabin-accent bright">{{ totals.uniqueGuests }}</span> {{ 'TOTAL_GUESTS' | translate }}</span>
-  </div>
+  <ul class="cabin-totals small dimmed" aria-label="{{ 'TOTALS_LABEL' | translate }}">
+    <li><span class="cabin-accent bright">{{ totals.visits }}</span> {{ 'TOTAL_VISITS' | translate }}</li>
+    <li><span class="cabin-accent bright">{{ totals.nights }}</span> {{ 'TOTAL_NIGHTS' | translate }}</li>
+    <li><span class="cabin-accent bright">{{ totals.uniqueGuests }}</span> {{ 'TOTAL_GUESTS' | translate }}</li>
+  </ul>
   {% endif %}
-  {% if cabinFact %}<div class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</div>{% endif %}
-</div>
+  {% if cabinFact %}<p class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</p>{% endif %}
+</section>
 {% endif %}

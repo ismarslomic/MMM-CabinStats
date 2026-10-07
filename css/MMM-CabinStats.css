@@ -16,6 +16,21 @@ div.MMM-CabinStats {
   max-width: 560px;
 }
 
+.cabin-heading,
+.cabin-next-heading,
+.cabin-stay,
+.cabin-fact,
+.cabin-guests,
+.cabin-totals {
+  margin: 0;
+  padding: 0;
+}
+
+.cabin-guests,
+.cabin-totals {
+  list-style: none;
+}
+
 .cabin-accent {
   color: var(--cabin-accent);
 }

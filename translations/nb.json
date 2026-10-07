@@ -1,4 +1,8 @@
 {
+  "REGION_LABEL": "Hyttestatistikk",
+  "GUESTS_ON_CABIN": "Gjester på hytta",
+  "GUESTS_NEXT_VISIT": "Gjester neste besøk",
+  "TOTALS_LABEL": "Totalt",
   "CONFIG_ERROR": "MMM-CabinStats: sett apiBaseUrl i config.js",
   "HEADING_OCCUPIED": "Velkommen til hytta",
   "STAY_NIGHTS_LEFT_ONE": "1 natt igjen",
