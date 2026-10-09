@@ -41,6 +41,7 @@ var SocketNotification;
     SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
 })(SocketNotification || (SocketNotification = {}));
 
+const displays = ['full', 'stats', 'facts'];
 /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
 const maximumTimerDelay = 2 ** 31 - 1;
 /** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
@@ -49,6 +50,7 @@ const defaultConfig = {
     requestTimeout: 10_000,
     guestFactInterval: 18_000,
     cabinFactInterval: 45_000,
+    display: 'full',
     showNextVisit: true,
     showCabinFacts: true,
     pauseWhenHidden: false,
@@ -78,6 +80,9 @@ function positiveTimerDelay(value, fallback) {
 function nonNegativeInteger(value, fallback) {
     return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : fallback;
 }
+function oneOf(value, allowed, fallback) {
+    return allowed.find((option) => option === value) ?? fallback;
+}
 function boolean(value, fallback) {
     return typeof value === 'boolean' ? value : fallback;
 }
@@ -93,6 +98,7 @@ function resolveConfig(raw) {
         requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
         guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
         cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
+        display: oneOf(config.display, displays, defaultConfig.display),
         showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
         showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
         pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),

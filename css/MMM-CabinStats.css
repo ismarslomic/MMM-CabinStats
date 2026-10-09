@@ -140,3 +140,9 @@ div.MMM-CabinStats {
 .cabin-fact-cabin {
   margin-top: 4px;
 }
+
+/* Facts-only instance: full width and centered, like the compliments module. */
+.cabin-stats-facts {
+  max-width: none;
+  text-align: center;
+}

@@ -158,8 +158,14 @@ const frontendModule: Omit<
   rotateGuestFact(): void {
     const state = this.state
     const liveStats = state?.liveStats
-    // Guest facts are only shown for an ongoing reservation.
-    if (!state || !liveStats?.isOccupied || !liveStats.currentReservation) return
+    // Guest facts are only shown for an ongoing reservation, and not at all by a `stats` instance.
+    if (
+      resolveConfig(this.config).display === 'stats' ||
+      !state ||
+      !liveStats?.isOccupied ||
+      !liveStats.currentReservation
+    )
+      return
     const length = interleaveGuestFacts(liveStats.guestFunFacts).length
     if (length <= 1) return
     state.guestFactIndex = nextIndex(state.guestFactIndex, length)
@@ -169,7 +175,7 @@ const frontendModule: Omit<
   rotateCabinFact(): void {
     const state = this.state
     const config = resolveConfig(this.config)
-    if (!state?.liveStats || !config.showCabinFacts) return
+    if (!state?.liveStats || !config.showCabinFacts || config.display === 'stats') return
     const length = state.liveStats.cabinFunFacts.length
     if (length <= 1) return
     state.cabinFactIndex = nextIndex(state.cabinFactIndex, length)

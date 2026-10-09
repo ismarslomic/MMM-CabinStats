@@ -163,6 +163,21 @@ describe('buildViewModel', () => {
       expect(build(occupiedMixed, { cabinFactIndex: 7 }).cabinFact).toBe('Det er 300 netter totalt.')
     })
 
+    test('are both hidden for display stats, the rest is kept', () => {
+      const model = build(occupiedMixed, { config: { ...config, display: 'stats' } })
+      expect(model.display).toBe('stats')
+      expect(model.guestFact).toBeNull()
+      expect(model.cabinFact).toBeNull()
+      expect(model.guests.length).toBeGreaterThan(0)
+    })
+
+    test('are kept for display facts', () => {
+      const model = build(occupiedMixed, { config: { ...config, display: 'facts' } })
+      expect(model.display).toBe('facts')
+      expect(model.guestFact).not.toBeNull()
+      expect(model.cabinFact).not.toBeNull()
+    })
+
     test('is hidden when showCabinFacts is off', () => {
       expect(build(occupiedMixed, { config: { ...config, showCabinFacts: false } }).cabinFact).toBeNull()
     })

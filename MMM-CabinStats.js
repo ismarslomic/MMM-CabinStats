@@ -35,6 +35,7 @@
 
     var Log__namespace = /*#__PURE__*/_interopNamespaceDefault(Log);
 
+    const displays = ['full', 'stats', 'facts'];
     /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
     const maximumTimerDelay = 2 ** 31 - 1;
     /** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
@@ -44,6 +45,7 @@
         requestTimeout: 10_000,
         guestFactInterval: 18_000,
         cabinFactInterval: 45_000,
+        display: 'full',
         showNextVisit: true,
         showCabinFacts: true,
         pauseWhenHidden: false,
@@ -73,6 +75,9 @@
     function nonNegativeInteger(value, fallback) {
         return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : fallback;
     }
+    function oneOf(value, allowed, fallback) {
+        return allowed.find((option) => option === value) ?? fallback;
+    }
     function boolean(value, fallback) {
         return typeof value === 'boolean' ? value : fallback;
     }
@@ -88,6 +93,7 @@
             requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
             guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
             cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
+            display: oneOf(config.display, displays, defaultConfig.display),
             showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
             showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
             pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),
@@ -249,8 +255,9 @@
         return length > 0 ? Math.max(0, Math.min(index, length - 1)) : 0;
     }
 
-    const emptyViewModel = (view, animationSpeed) => ({
+    const emptyViewModel = (view, display, animationSpeed) => ({
         view,
+        display,
         stay: null,
         guests: [],
         guestFact: null,
@@ -278,18 +285,19 @@
     }
     /** Builds the template data from the config, the latest stats and the rotation indices. */
     function buildViewModel({ config, liveStats, guestFactIndex, cabinFactIndex }) {
-        const { animationSpeed } = config;
+        const { animationSpeed, display } = config;
         const apiBaseUrl = normaliseApiBaseUrl(config.apiBaseUrl);
         if (apiBaseUrl === undefined)
-            return emptyViewModel('config-error', animationSpeed);
+            return emptyViewModel('config-error', display, animationSpeed);
         if (liveStats === undefined)
-            return emptyViewModel('empty', animationSpeed);
+            return emptyViewModel('empty', display, animationSpeed);
         const current = liveStats.isOccupied ? liveStats.currentReservation : null;
         const next = config.showNextVisit ? liveStats.nextReservation : null;
-        const guestFacts = current ? interleaveGuestFacts(liveStats.guestFunFacts) : [];
-        const cabinFacts = config.showCabinFacts ? liveStats.cabinFunFacts : [];
+        const guestFacts = current && display !== 'stats' ? interleaveGuestFacts(liveStats.guestFunFacts) : [];
+        const cabinFacts = config.showCabinFacts && display !== 'stats' ? liveStats.cabinFunFacts : [];
         return {
             view: current ? 'occupied' : 'compact',
+            display,
             stay: current
                 ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
                 : null,
@@ -515,8 +523,11 @@
         rotateGuestFact() {
             const state = this.state;
             const liveStats = state?.liveStats;
-            // Guest facts are only shown for an ongoing reservation.
-            if (!state || !liveStats?.isOccupied || !liveStats.currentReservation)
+            // Guest facts are only shown for an ongoing reservation, and not at all by a `stats` instance.
+            if (resolveConfig(this.config).display === 'stats' ||
+                !state ||
+                !liveStats?.isOccupied ||
+                !liveStats.currentReservation)
                 return;
             const length = interleaveGuestFacts(liveStats.guestFunFacts).length;
             if (length <= 1)
@@ -527,7 +538,7 @@
         rotateCabinFact() {
             const state = this.state;
             const config = resolveConfig(this.config);
-            if (!state?.liveStats || !config.showCabinFacts)
+            if (!state?.liveStats || !config.showCabinFacts || config.display === 'stats')
                 return;
             const length = state.liveStats.cabinFunFacts.length;
             if (length <= 1)

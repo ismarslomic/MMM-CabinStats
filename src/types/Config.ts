@@ -1,3 +1,8 @@
+/** Which parts of the module an instance renders. */
+export type Display = 'full' | 'stats' | 'facts'
+
+export const displays: readonly Display[] = ['full', 'stats', 'facts']
+
 /** Module configuration, set per instance in the `config` section of `config.js`. */
 export type Config = {
   /**
@@ -13,6 +18,11 @@ export type Config = {
   guestFactInterval: number
   /** Rotation interval of the cabin fun facts in milliseconds (30–60 s recommended). */
   cabinFactInterval: number
+  /**
+   * What this instance renders: `full` everything, `stats` everything except the guest and cabin facts, `facts` only
+   * the guest and cabin facts. Use two instances at different positions to place the facts elsewhere.
+   */
+  display: Display
   /** Show the block with the upcoming reservation. */
   showNextVisit: boolean
   /** Show the cabin fun facts strip. */
@@ -33,6 +43,7 @@ export const defaultConfig: Config = {
   requestTimeout: 10_000,
   guestFactInterval: 18_000,
   cabinFactInterval: 45_000,
+  display: 'full',
   showNextVisit: true,
   showCabinFacts: true,
   pauseWhenHidden: false,
@@ -67,6 +78,10 @@ function nonNegativeInteger(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0 ? value : fallback
 }
 
+function oneOf<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return allowed.find((option) => option === value) ?? fallback
+}
+
 function boolean(value: unknown, fallback: boolean): boolean {
   return typeof value === 'boolean' ? value : fallback
 }
@@ -83,6 +98,7 @@ export function resolveConfig(raw: unknown): Config {
     requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
     guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
     cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
+    display: oneOf(config.display, displays, defaultConfig.display),
     showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
     showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
     pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),

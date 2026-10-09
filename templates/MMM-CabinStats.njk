@@ -16,6 +16,13 @@
 
 {% if view == 'config-error' %}
 <p class="cabin-stats small dimmed" role="alert">{{ 'CONFIG_ERROR' | translate }}</p>
+{% elif display == 'facts' %}
+{% if guestFact or cabinFact %}
+<section class="cabin-stats cabin-stats-facts" aria-label="{{ 'REGION_LABEL' | translate }}">
+  {% if guestFact %}<p class="cabin-fact cabin-fact-guest thin xlarge bright">{{ guestFact }}</p>{% endif %}
+  {% if cabinFact %}<p class="cabin-fact cabin-fact-cabin thin xlarge bright">{{ cabinFact }}</p>{% endif %}
+</section>
+{% endif %}
 {% elif view == 'occupied' %}
 <section class="cabin-stats" aria-label="{{ 'REGION_LABEL' | translate }}">
   <h2 class="cabin-heading large light bright">{{ 'HEADING_OCCUPIED' | translate }}</h2>
