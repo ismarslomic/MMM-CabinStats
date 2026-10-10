@@ -4,12 +4,15 @@ div.MMM-CabinStats {
 }
 /* stylelint-enable selector-class-pattern */
 
-.cabin-stats {
+.cabin-stats,
+.cabin-overlay {
   --cabin-accent: #ffc83d;
   --cabin-ring: rgb(255 255 255 / 85%);
   --cabin-avatar-large: 110px;
   --cabin-avatar-small: 48px;
+}
 
+.cabin-stats {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -50,6 +53,21 @@ div.MMM-CabinStats {
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.cabin-guest-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cabin-avatar {
@@ -145,4 +163,71 @@ div.MMM-CabinStats {
 .cabin-stats-facts {
   max-width: none;
   text-align: center;
+}
+
+/* The guest view covers the whole screen, and with it every other module. */
+.cabin-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 32px;
+  background: #000;
+}
+
+.cabin-overlay-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 72px;
+  height: 72px;
+  border: 2px solid var(--cabin-ring);
+  border-radius: 50%;
+  background: none;
+  color: #fff;
+  font-size: 32px;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cabin-overlay-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cabin-overlay-name,
+.cabin-overlay-status {
+  margin: 0;
+}
+
+.cabin-overlay-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.cabin-overlay-button {
+  min-width: 160px;
+  min-height: 56px;
+  padding: 0 24px;
+  border: 2px solid var(--cabin-ring);
+  border-radius: 28px;
+  background: none;
+  color: #fff;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cabin-guest-button:focus-visible,
+.cabin-overlay-close:focus-visible,
+.cabin-overlay-button:focus-visible {
+  outline: 2px solid var(--cabin-accent);
+  outline-offset: 4px;
 }

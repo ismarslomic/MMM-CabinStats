@@ -125,4 +125,95 @@ describe('Backend', () => {
       message: expect.stringContaining(expectedMessage),
     })
   })
+
+  describe('mock guest stats', () => {
+    test('replies with an empty object without calling the backend', async () => {
+      expect(helper.useMockGuestStats).toBe(true)
+      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        config,
+      })
+      await flush()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_RESPONSE, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        guestStats: {},
+      })
+    })
+  })
+
+  describe('guest stats', () => {
+    beforeEach(() => {
+      helper.useMockGuestStats = false
+      fetchMock.mockResolvedValue(jsonResponse({}))
+    })
+
+    test('replies with the guest stats, the requesting identifier and the guestId', async () => {
+      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+        identifier: 'module_1',
+        guestId: 'guest 1',
+        config,
+      })
+      await flush()
+
+      expect(fetchMock).toHaveBeenCalledOnce()
+      expect(fetchMock.mock.calls[0][0]).toBe('http://backend.example:8080/api/stats/guests/guest%201')
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_RESPONSE, {
+        identifier: 'module_1',
+        guestId: 'guest 1',
+        guestStats: {},
+      })
+    })
+
+    test.each([null, {}, { identifier: 'module_1', config }, { identifier: 'module_1', guestId: 'guest-1' }])(
+      'ignores malformed requests: %p',
+      async (payload) => {
+        helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, payload)
+        await flush()
+        expect(fetchMock).not.toHaveBeenCalled()
+        expect(mockedSendSocketNotification).not.toHaveBeenCalled()
+        expect(Log.error).toHaveBeenCalled()
+      }
+    )
+
+    test('replies with an error and never fetches without a valid apiBaseUrl', async () => {
+      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        config: {},
+      })
+      await flush()
+
+      expect(fetchMock).not.toHaveBeenCalled()
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_ERROR, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        message: expect.stringContaining('apiBaseUrl'),
+      })
+    })
+
+    test.each([
+      ['the backend is down', () => fetchMock.mockRejectedValue(new TypeError('fetch failed')), 'failed'],
+      ['the guest is unknown', () => fetchMock.mockResolvedValue(jsonResponse({}, 404)), 'status 404'],
+      ['the payload is invalid', () => fetchMock.mockResolvedValue(jsonResponse([])), 'contract'],
+    ])('replies with an error when %s', async (_name, arrange, expectedMessage) => {
+      arrange()
+
+      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        config,
+      })
+      await flush()
+
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_ERROR, {
+        identifier: 'module_1',
+        guestId: 'guest-1',
+        message: expect.stringContaining(expectedMessage),
+      })
+    })
+  })
 })

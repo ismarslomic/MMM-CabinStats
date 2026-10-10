@@ -1,4 +1,5 @@
 import { isLiveStats, LiveStats } from '../types/LiveStats'
+import { fetchJson } from './fetchJson'
 
 /** The parts of the config `fetchLiveStats` needs. */
 export type FetchLiveStatsOptions = {
@@ -19,30 +20,7 @@ export async function fetchLiveStats(
   fetchFn: typeof fetch = fetch
 ): Promise<LiveStats> {
   const url = `${apiBaseUrl}/api/stats`
-
-  let response: Response
-  try {
-    response = await fetchFn(url, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(requestTimeout),
-    })
-  } catch (error) {
-    const isTimeout = error instanceof Error && error.name === 'TimeoutError'
-    throw new Error(isTimeout ? `Request to ${url} timed out after ${requestTimeout} ms` : `Request to ${url} failed`, {
-      cause: error,
-    })
-  }
-
-  if (!response.ok) {
-    throw new Error(`Request to ${url} failed with status ${response.status}`)
-  }
-
-  let body: unknown
-  try {
-    body = await response.json()
-  } catch (error) {
-    throw new Error(`Response from ${url} is not valid JSON`, { cause: error })
-  }
+  const body = await fetchJson(url, { requestTimeout }, fetchFn)
 
   if (!isLiveStats(body)) {
     throw new Error(`Response from ${url} does not match the expected live stats contract`)

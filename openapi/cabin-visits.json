@@ -278,6 +278,45 @@
           }
         }
       }
+    },
+    "/api/stats/guests/{guestId}": {
+      "get": {
+        "operationId": "getGuestDetailStats",
+        "tags": [
+          "Stats"
+        ],
+        "summary": "Statistics for one guest",
+        "description": "Placeholder: returns an empty object for now. Will return all relevant statistics for one guest, for the guest view on the smart mirror.",
+        "parameters": [
+          {
+            "name": "guestId",
+            "in": "path",
+            "description": "Internal unique identifier of the guest.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "Unexpected server error."
+          },
+          "404": {
+            "description": "The guest does not exist."
+          },
+          "200": {
+            "description": "Statistics for the requested guest.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GuestDetailStats"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "webhooks": {},
@@ -1878,6 +1917,12 @@
             }
           }
         }
+      },
+      "GuestDetailStats": {
+        "type": "object",
+        "title": "GuestDetailStats",
+        "description": "Placeholder: no properties yet. Will hold all statistics for one guest.",
+        "properties": {}
       }
     }
   },

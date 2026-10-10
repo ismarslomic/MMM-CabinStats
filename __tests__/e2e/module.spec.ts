@@ -157,4 +157,75 @@ test.describe('MMM-CabinStats', () => {
     await page.waitForTimeout(3000)
     await expect(flaky(page)).toBeVisible()
   })
+
+  test.describe('guest view', () => {
+    function guestButton(view: Locator, name: string): Locator {
+      return view.getByRole('button', { name: `Vis statistikk for ${name}` })
+    }
+
+    function guestDialog(page: Page, name: string): Locator {
+      return page.getByRole('dialog', { name: `Statistikk for ${name}` })
+    }
+
+    test('opens the guest view from an avatar and closes it with the close button', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      await expect(dialog).toBeVisible()
+      await expect(dialog.getByRole('heading', { level: 2, name: 'Anna Testesen' })).toBeVisible()
+      await expect(dialog.getByText('Statistikk kommer snart')).toBeVisible()
+
+      await dialog.getByRole('button', { name: 'Lukk' }).click()
+      await expect(dialog).toHaveCount(0)
+    })
+
+    test('covers the whole screen, so no other module can be used', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      const viewport = page.viewportSize()!
+      await expect(dialog).toHaveCSS('position', 'fixed')
+      expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: viewport.width, height: viewport.height })
+    })
+
+    test('opens from a guest of the next visit too', async ({ page }) => {
+      await guestButton(notOccupiedNext(page), 'Dora').click()
+      await expect(guestDialog(page, 'Dora Eksempel')).toBeVisible()
+    })
+
+    test('closes with Escape', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Bjørn').click()
+      await expect(guestDialog(page, 'Bjørn Testesen')).toBeVisible()
+      await page.keyboard.press('Escape')
+      await expect(guestDialog(page, 'Bjørn Testesen')).toHaveCount(0)
+    })
+
+    test('closes by itself after the inactivity timeout', async ({ page }) => {
+      await guestButton(guestWithoutAvatar(page), 'Eva').click()
+      await expect(guestDialog(page, 'Eva Eksempel')).toBeVisible()
+      await expect(guestDialog(page, 'Eva Eksempel')).toHaveCount(0, { timeout: 5000 })
+    })
+
+    test('stays open while the live stats are refreshed', async ({ page }) => {
+      await guestButton(flaky(page), 'Bjørn').click()
+      const dialog = guestDialog(page, 'Bjørn Testesen')
+      await expect(dialog).toBeVisible()
+      // The flaky instance polls every second; the view must not be rebuilt or closed by it.
+      await page.waitForTimeout(2500)
+      await expect(dialog).toBeVisible()
+    })
+
+    test('shows an error with a retry button when the stats cannot be fetched', async ({ page, request }) => {
+      await expect(flaky(page)).toBeVisible()
+      await request.post(`${mockBackend}/flaky/control/down`)
+      await guestButton(flaky(page), 'Bjørn').click()
+
+      const dialog = guestDialog(page, 'Bjørn Testesen')
+      await expect(dialog.getByRole('alert')).toHaveText('Kunne ikke hente statistikk')
+
+      await request.post(`${mockBackend}/flaky/control/up`)
+      await dialog.getByRole('button', { name: 'Prøv igjen' }).click()
+      await expect(dialog.getByText('Statistikk kommer snart')).toBeVisible()
+    })
+  })
 })

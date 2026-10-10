@@ -29,7 +29,7 @@ const config = {
     {
       module: 'MMM-CabinStats',
       position: 'bottom_left',
-      config: { ...fast, apiBaseUrl: `${mockBackend}/guest-without-avatar` },
+      config: { ...fast, apiBaseUrl: `${mockBackend}/guest-without-avatar`, guestViewTimeout: 2000 },
     },
     {
       module: 'MMM-CabinStats',

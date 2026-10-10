@@ -39,6 +39,9 @@ var SocketNotification;
     SocketNotification["LIVE_STATS_REQUEST"] = "LIVE_STATS_REQUEST";
     SocketNotification["LIVE_STATS_RESPONSE"] = "LIVE_STATS_RESPONSE";
     SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
+    SocketNotification["GUEST_STATS_REQUEST"] = "GUEST_STATS_REQUEST";
+    SocketNotification["GUEST_STATS_RESPONSE"] = "GUEST_STATS_RESPONSE";
+    SocketNotification["GUEST_STATS_ERROR"] = "GUEST_STATS_ERROR";
 })(SocketNotification || (SocketNotification = {}));
 
 const displays = ['full', 'stats', 'facts'];
@@ -51,6 +54,8 @@ const defaultConfig = {
     guestFactInterval: 18_000,
     cabinFactInterval: 45_000,
     display: 'full',
+    guestView: true,
+    guestViewTimeout: 60_000,
     showNextVisit: true,
     showCabinFacts: true,
     pauseWhenHidden: false,
@@ -99,6 +104,8 @@ function resolveConfig(raw) {
         guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
         cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
         display: oneOf(config.display, displays, defaultConfig.display),
+        guestView: boolean(config.guestView, defaultConfig.guestView),
+        guestViewTimeout: positiveTimerDelay(config.guestViewTimeout, defaultConfig.guestViewTimeout),
         showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
         showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
         pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),
@@ -108,6 +115,11 @@ function resolveConfig(raw) {
 /** Type guard for a config that has a usable `apiBaseUrl`. */
 function hasApiBaseUrl(config) {
     return config.apiBaseUrl !== undefined;
+}
+
+/** Type guard for {@link GuestDetailStats}: any JSON object, because the contract has no properties yet. */
+function isGuestDetailStats(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -200,15 +212,17 @@ function isRecord(value) {
 function isLiveStatsRequest(payload) {
     return isRecord(payload) && typeof payload.identifier === 'string' && isRecord(payload.config);
 }
+/** Type guard for {@link GuestStatsRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
+function isGuestStatsRequest(payload) {
+    return (isLiveStatsRequest(payload) && 'guestId' in payload && typeof payload.guestId === 'string' && payload.guestId !== '');
+}
 
 /**
- * Fetches `GET /api/stats` from the backend and validates the response.
+ * Fetches a url and parses the JSON body. The caller validates the payload.
  *
- * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
- * that does not match the contract.
+ * @throws Error with a short description on network failure, timeout, non-2xx status or invalid JSON.
  */
-async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
-    const url = `${apiBaseUrl}/api/stats`;
+async function fetchJson(url, { requestTimeout }, fetchFn = fetch) {
     let response;
     try {
         response = await fetchFn(url, {
@@ -225,13 +239,38 @@ async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
     if (!response.ok) {
         throw new Error(`Request to ${url} failed with status ${response.status}`);
     }
-    let body;
     try {
-        body = await response.json();
+        return await response.json();
     }
     catch (error) {
         throw new Error(`Response from ${url} is not valid JSON`, { cause: error });
     }
+}
+
+/**
+ * Fetches `GET /api/stats/guests/{guestId}` from the backend and validates the response.
+ *
+ * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
+ * that does not match the contract.
+ */
+async function fetchGuestStats(guestId, { apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+    const url = `${apiBaseUrl}/api/stats/guests/${encodeURIComponent(guestId)}`;
+    const body = await fetchJson(url, { requestTimeout }, fetchFn);
+    if (!isGuestDetailStats(body)) {
+        throw new Error(`Response from ${url} does not match the expected guest stats contract`);
+    }
+    return body;
+}
+
+/**
+ * Fetches `GET /api/stats` from the backend and validates the response.
+ *
+ * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
+ * that does not match the contract.
+ */
+async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+    const url = `${apiBaseUrl}/api/stats`;
+    const body = await fetchJson(url, { requestTimeout }, fetchFn);
     if (!isLiveStats(body)) {
         throw new Error(`Response from ${url} does not match the expected live stats contract`);
     }
@@ -241,6 +280,11 @@ async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
 // noinspection JSVoidFunctionReturnValueUsed,JSUnusedGlobalSymbols
 // Default import preserves static methods on MagicMirror's CommonJS NodeHelper class.
 var Backend = NodeHelper.create({
+    /**
+     * TEMPORARY: reply to guest stats requests with an empty object without calling the backend, until
+     * `GET /api/stats/guests/{guestId}` is implemented there. Set to `false` to fetch for real.
+     */
+    useMockGuestStats: true,
     start() {
         Log__namespace.debug(`${this.name} is started!`);
     },
@@ -248,15 +292,23 @@ var Backend = NodeHelper.create({
         Log__namespace.debug(`${this.name} is stopped!`);
     },
     socketNotificationReceived(notification, request) {
-        if (notification !== SocketNotification.LIVE_STATS_REQUEST) {
+        if (notification === SocketNotification.LIVE_STATS_REQUEST) {
+            if (!isLiveStatsRequest(request)) {
+                Log__namespace.error(`${this.name} received an invalid live stats request`);
+                return;
+            }
+            void this.loadLiveStats(request.identifier, request.config);
+        }
+        else if (notification === SocketNotification.GUEST_STATS_REQUEST) {
+            if (!isGuestStatsRequest(request)) {
+                Log__namespace.error(`${this.name} received an invalid guest stats request`);
+                return;
+            }
+            void this.loadGuestStats(request.identifier, request.guestId, request.config);
+        }
+        else {
             Log__namespace.error(`${this.name} received unknown socket notification: '${notification}'`);
-            return;
         }
-        if (!isLiveStatsRequest(request)) {
-            Log__namespace.error(`${this.name} received an invalid live stats request`);
-            return;
-        }
-        void this.loadLiveStats(request.identifier, request.config);
     },
     async loadLiveStats(identifier, rawConfig) {
         const config = resolveConfig(rawConfig);
@@ -273,10 +325,30 @@ var Backend = NodeHelper.create({
             this.sendError(identifier, error instanceof Error ? error.message : String(error));
         }
     },
+    async loadGuestStats(identifier, guestId, rawConfig) {
+        const config = resolveConfig(rawConfig);
+        if (!hasApiBaseUrl(config)) {
+            this.sendGuestStatsError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url');
+            return;
+        }
+        try {
+            const guestStats = this.useMockGuestStats ? {} : await fetchGuestStats(guestId, config);
+            const payload = { identifier, guestId, guestStats };
+            this.sendSocketNotification(SocketNotification.GUEST_STATS_RESPONSE, payload);
+        }
+        catch (error) {
+            this.sendGuestStatsError(identifier, guestId, error instanceof Error ? error.message : String(error));
+        }
+    },
     sendError(identifier, message) {
         Log__namespace.error(`${this.name} could not load live stats: ${message}`);
         const payload = { identifier, message };
         this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload);
+    },
+    sendGuestStatsError(identifier, guestId, message) {
+        Log__namespace.error(`${this.name} could not load guest stats: ${message}`);
+        const payload = { identifier, guestId, message };
+        this.sendSocketNotification(SocketNotification.GUEST_STATS_ERROR, payload);
     },
 });
 

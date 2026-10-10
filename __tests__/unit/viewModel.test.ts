@@ -36,6 +36,10 @@ describe('avatarUrlFor', () => {
 })
 
 describe('buildViewModel', () => {
+  test.each([true, false])('passes the guestView option %j on to the template', (guestView) => {
+    expect(build(occupiedMixed as LiveStats, { config: { ...config, guestView } }).guestView).toBe(guestView)
+  })
+
   test('shows the config error without a valid apiBaseUrl, even with data', () => {
     for (const apiBaseUrl of [undefined, '', 'nonsense']) {
       const model = buildViewModel({

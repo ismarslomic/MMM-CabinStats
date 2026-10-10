@@ -17,5 +17,12 @@
   "NEXT_VISIT_IN_DAYS": "om {count} dager",
   "TOTAL_VISITS": "besøk",
   "TOTAL_NIGHTS": "netter",
-  "TOTAL_GUESTS": "gjester"
+  "TOTAL_GUESTS": "gjester",
+  "OPEN_GUEST_STATS": "Vis statistikk for {name}",
+  "CLOSE": "Lukk",
+  "GUEST_STATS_LABEL": "Statistikk for {name}",
+  "GUEST_STATS_LOADING": "Henter statistikk …",
+  "GUEST_STATS_ERROR": "Kunne ikke hente statistikk",
+  "GUEST_STATS_RETRY": "Prøv igjen",
+  "GUEST_STATS_PLACEHOLDER": "Statistikk kommer snart"
 }

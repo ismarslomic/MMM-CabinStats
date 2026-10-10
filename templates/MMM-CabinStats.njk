@@ -1,5 +1,6 @@
-{% macro avatar(guest, size) %}
+{% macro avatar(guest, size, interactive) %}
 <li class="cabin-guest{% if guest.isFirstVisit %} cabin-guest-first{% endif %}">
+  {% if interactive %}<button type="button" class="cabin-guest-button" data-cabin-guest-id="{{ guest.guestId }}" aria-label="{{ 'OPEN_GUEST_STATS' | translate({ name: guest.firstName }) }}">{% endif %}
   <div class="cabin-avatar cabin-avatar-{{ size }}">
     <span class="cabin-avatar-initials" aria-hidden="true">{{ guest.initials }}</span>
     {% if guest.avatarUrl %}<img class="cabin-avatar-image" src="{{ guest.avatarUrl }}" alt="">{% endif %}
@@ -11,6 +12,7 @@
     {% if guest.isFirstVisit %}<span class="cabin-accent">{{ 'FIRST_VISIT' | translate }}</span>{% else %}{{ 'VISIT_NUMBER' | translate({ count: guest.visitNumber }) }}{% endif %}
   </div>
   {% endif %}
+  {% if interactive %}</button>{% endif %}
 </li>
 {% endmacro %}
 
@@ -33,14 +35,14 @@
     {% else %}{{ 'STAY_LAST_DAY' | translate }}{% endif %}
   </p>
   <ul class="cabin-guests" aria-label="{{ 'GUESTS_ON_CABIN' | translate }}">
-    {% for guest in guests %}{{ avatar(guest, 'large') }}{% endfor %}
+    {% for guest in guests %}{{ avatar(guest, 'large', guestView) }}{% endfor %}
   </ul>
   {% if guestFact %}<p class="cabin-fact cabin-fact-guest medium light bright">{{ guestFact }}</p>{% endif %}
   {% if nextVisit %}
   <section class="cabin-next dimmed" aria-label="{{ 'HEADING_NEXT_VISIT' | translate }}">
     <h3 class="cabin-next-heading small">{{ 'HEADING_NEXT_VISIT' | translate }} {{ nextVisit.dateRange }}</h3>
     <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
-      {% for guest in nextVisit.guests %}{{ avatar(guest, 'small') }}{% endfor %}
+      {% for guest in nextVisit.guests %}{{ avatar(guest, 'small', guestView) }}{% endfor %}
     </ul>
   </section>
   {% endif %}
@@ -57,7 +59,7 @@
   </h2>
   <p class="cabin-stay small dimmed">{{ nextVisit.dateRange }}</p>
   <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
-    {% for guest in nextVisit.guests %}{{ avatar(guest, 'small') }}{% endfor %}
+    {% for guest in nextVisit.guests %}{{ avatar(guest, 'small', guestView) }}{% endfor %}
   </ul>
   {% if nextVisit.fact %}<p class="cabin-fact cabin-fact-guest medium light bright">{{ nextVisit.fact }}</p>{% endif %}
   {% endif %}

@@ -7,6 +7,7 @@ import { deflateSync, crc32 } from 'node:zlib'
  * gets its own data through its `apiBaseUrl`:
  *
  *   GET  /{scenario}/api/stats                  fixture JSON, or 503 while the scenario is switched off
+ *   GET  /{scenario}/api/stats/guests/{id}     empty guest stats object (the contract has no properties yet)
  *   GET  /{scenario}/api/guests/{id}/avatar     generated placeholder PNG
  *   POST /{scenario}/control/down | up          switch the scenario off or on (for outage tests)
  *   GET  /health                                readiness probe for Playwright `webServer`
@@ -83,6 +84,9 @@ const server = createServer((request, response) => {
   if (disabled.has(scenario)) return send(response, 503, 'text/plain', 'Switched off')
   if (request.method === 'GET' && route === '/api/stats') {
     return send(response, 200, 'application/json', fixtures.get(scenario))
+  }
+  if (request.method === 'GET' && /^\/api\/stats\/guests\/[^/]+$/.test(route)) {
+    return send(response, 200, 'application/json', '{}')
   }
   if (request.method === 'GET' && /^\/api\/guests\/[^/]+\/avatar$/.test(route)) {
     return send(response, 200, 'image/png', avatar)

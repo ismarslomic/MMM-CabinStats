@@ -146,6 +146,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stats/guests/{guestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Statistics for one guest
+         * @description Placeholder: returns an empty object for now. Will return all relevant statistics for one guest, for the guest view on the smart mirror.
+         */
+        get: operations["getGuestDetailStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -743,6 +763,11 @@ export interface components {
             /** @description Age group breakdown of all registered guests, using current age at time of the request. */
             ageGroups: components["schemas"]["AgeGroup"][];
         };
+        /**
+         * GuestDetailStats
+         * @description Placeholder: no properties yet. Will hold all statistics for one guest.
+         */
+        GuestDetailStats: Record<string, never>;
     };
     responses: never;
     parameters: never;
@@ -974,6 +999,43 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["GuestStats"];
                 };
+            };
+            /** @description Unexpected server error. */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    getGuestDetailStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Internal unique identifier of the guest. */
+                guestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Statistics for the requested guest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuestDetailStats"];
+                };
+            };
+            /** @description The guest does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Unexpected server error. */
             default: {

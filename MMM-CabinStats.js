@@ -46,6 +46,8 @@
         guestFactInterval: 18_000,
         cabinFactInterval: 45_000,
         display: 'full',
+        guestView: true,
+        guestViewTimeout: 60_000,
         showNextVisit: true,
         showCabinFacts: true,
         pauseWhenHidden: false,
@@ -94,6 +96,8 @@
             guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
             cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
             display: oneOf(config.display, displays, defaultConfig.display),
+            guestView: boolean(config.guestView, defaultConfig.guestView),
+            guestViewTimeout: positiveTimerDelay(config.guestViewTimeout, defaultConfig.guestViewTimeout),
             showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
             showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
             pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),
@@ -110,7 +114,15 @@
         SocketNotification["LIVE_STATS_REQUEST"] = "LIVE_STATS_REQUEST";
         SocketNotification["LIVE_STATS_RESPONSE"] = "LIVE_STATS_RESPONSE";
         SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
+        SocketNotification["GUEST_STATS_REQUEST"] = "GUEST_STATS_REQUEST";
+        SocketNotification["GUEST_STATS_RESPONSE"] = "GUEST_STATS_RESPONSE";
+        SocketNotification["GUEST_STATS_ERROR"] = "GUEST_STATS_ERROR";
     })(SocketNotification || (SocketNotification = {}));
+
+    /** Type guard for {@link GuestDetailStats}: any JSON object, because the contract has no properties yet. */
+    function isGuestDetailStats(value) {
+        return typeof value === 'object' && value !== null && !Array.isArray(value);
+    }
 
     const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
     function isRecord$1(value) {
@@ -207,6 +219,20 @@
     function isLiveStatsError(payload) {
         return isRecord(payload) && typeof payload.identifier === 'string' && typeof payload.message === 'string';
     }
+    /** Type guard for {@link GuestStatsResponse}. */
+    function isGuestStatsResponse(payload) {
+        return (isRecord(payload) &&
+            typeof payload.identifier === 'string' &&
+            typeof payload.guestId === 'string' &&
+            isGuestDetailStats(payload.guestStats));
+    }
+    /** Type guard for {@link GuestStatsError}. */
+    function isGuestStatsError(payload) {
+        return (isRecord(payload) &&
+            typeof payload.identifier === 'string' &&
+            typeof payload.guestId === 'string' &&
+            typeof payload.message === 'string');
+    }
 
     /**
      * Initials for the avatar fallback: first letter of the first and last name, upper-cased. Uses code points so
@@ -258,6 +284,7 @@
     const emptyViewModel = (view, display, animationSpeed) => ({
         view,
         display,
+        guestView: false,
         stay: null,
         guests: [],
         guestFact: null,
@@ -298,6 +325,7 @@
         return {
             view: current ? 'occupied' : 'compact',
             display,
+            guestView: config.guestView,
             stay: current
                 ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
                 : null,
@@ -391,6 +419,82 @@
         };
     }
 
+    /** Finds a guest of the ongoing or the next reservation. `undefined` when the guest is not in the live stats. */
+    function findGuest(liveStats, guestId) {
+        const guests = [...(liveStats?.currentReservation?.guests ?? []), ...(liveStats?.nextReservation?.guests ?? [])];
+        return guests.find((guest) => guest.guestId === guestId);
+    }
+    /** Builds what the overlay renders from the guest and the state of the view. */
+    function buildGuestOverlayModel(guest, apiBaseUrl, status) {
+        return {
+            guestId: guest.guestId,
+            fullName: `${guest.firstName} ${guest.lastName}`.trim(),
+            firstName: guest.firstName,
+            initials: initials(guest.firstName, guest.lastName),
+            avatarUrl: avatarUrlFor(apiBaseUrl, guest.avatarUrl),
+            status,
+        };
+    }
+
+    function element(tag, className, text) {
+        const node = document.createElement(tag);
+        node.className = className;
+        if (text !== undefined)
+            node.textContent = text;
+        return node;
+    }
+    function createAvatar(model) {
+        const avatar = element('div', 'cabin-avatar cabin-avatar-large');
+        avatar.append(element('span', 'cabin-avatar-initials', model.initials));
+        if (model.avatarUrl) {
+            const image = element('img', 'cabin-avatar-image');
+            image.src = model.avatarUrl;
+            image.alt = '';
+            avatar.append(image);
+        }
+        return avatar;
+    }
+    function createBody(model, translate, handlers) {
+        const body = element('div', 'cabin-overlay-body');
+        if (model.status === 'loading') {
+            const status = element('p', 'cabin-overlay-status medium light dimmed', translate('GUEST_STATS_LOADING'));
+            status.setAttribute('role', 'status');
+            body.append(status);
+        }
+        else if (model.status === 'error') {
+            const message = element('p', 'cabin-overlay-status medium light bright', translate('GUEST_STATS_ERROR'));
+            message.setAttribute('role', 'alert');
+            const retry = element('button', 'cabin-overlay-button medium', translate('GUEST_STATS_RETRY'));
+            retry.type = 'button';
+            retry.addEventListener('click', handlers.onRetry);
+            body.append(message, retry);
+        }
+        else {
+            // Next iteration: the statistics of the guest go here.
+            body.append(element('p', 'cabin-overlay-status medium light dimmed', translate('GUEST_STATS_PLACEHOLDER')));
+        }
+        return body;
+    }
+    /**
+     * Builds the full-screen guest view. It is meant to be appended to `document.body`, outside the module's own DOM, so
+     * that a re-render of the module (live stats polling) never touches it.
+     */
+    function createGuestOverlay(model, translate, handlers) {
+        const overlay = element('div', 'cabin-overlay');
+        overlay.setAttribute('role', 'dialog');
+        overlay.setAttribute('aria-modal', 'true');
+        overlay.setAttribute('aria-label', translate('GUEST_STATS_LABEL', { name: model.fullName }));
+        overlay.addEventListener('pointerdown', handlers.onActivity);
+        const close = element('button', 'cabin-overlay-close', '✕');
+        close.type = 'button';
+        close.setAttribute('aria-label', translate('CLOSE'));
+        close.addEventListener('click', handlers.onClose);
+        const header = element('header', 'cabin-overlay-header');
+        header.append(createAvatar(model), element('h2', 'cabin-overlay-name large light bright', model.fullName));
+        overlay.append(close, header, createBody(model, translate, handlers));
+        return overlay;
+    }
+
     const frontendModule = {
         defaults: defaultConfig,
         start() {
@@ -409,6 +513,21 @@
             this.startPolling();
             this.startRotation();
             this.updateDom();
+        },
+        notificationReceived(notification) {
+            // The avatars are re-created on every render, so one delegated listener on the document serves them all.
+            if (notification === 'DOM_OBJECTS_CREATED' && !this.documentClickHandler) {
+                this.documentClickHandler = (event) => {
+                    const avatar = event.target instanceof Element ? event.target.closest('[data-cabin-guest-id]') : null;
+                    // Several instances share the page: only react to the avatars of this one.
+                    if (avatar?.closest('.module')?.id !== this.identifier)
+                        return;
+                    const guestId = avatar.dataset.cabinGuestId;
+                    if (guestId)
+                        this.openGuestView(guestId);
+                };
+                document.addEventListener('click', this.documentClickHandler);
+            }
         },
         getStyles() {
             return [this.file('css/MMM-CabinStats.css')];
@@ -461,11 +580,29 @@
                 // Keep showing the last good data; the helper has already logged the details.
                 Log__namespace.error(`${this.name} could not load live stats: ${payload.message}`);
             }
+            else if (notificationIdentifier === SocketNotification.GUEST_STATS_RESPONSE) {
+                if (!isGuestStatsResponse(payload)) {
+                    Log__namespace.error(`${this.name} received an invalid guest stats response`);
+                    return;
+                }
+                this.finishGuestStats(payload.identifier, payload.guestId, 'loaded');
+            }
+            else if (notificationIdentifier === SocketNotification.GUEST_STATS_ERROR) {
+                if (!isGuestStatsError(payload)) {
+                    Log__namespace.error(`${this.name} received an invalid guest stats error`);
+                    return;
+                }
+                if (payload.identifier === this.identifier) {
+                    Log__namespace.error(`${this.name} could not load guest stats: ${payload.message}`);
+                }
+                this.finishGuestStats(payload.identifier, payload.guestId, 'error');
+            }
             else {
                 Log__namespace.error(`${this.name} received unknown socket notification: '${notificationIdentifier}'`);
             }
         },
         suspend() {
+            this.closeGuestView();
             if (this.config.pauseWhenHidden) {
                 this.isPollingSuspended = true;
                 this.stopPolling();
@@ -545,6 +682,74 @@
                 return;
             state.cabinFactIndex = nextIndex(state.cabinFactIndex, length);
             this.updateDom(config.animationSpeed);
+        },
+        openGuestView(guestId) {
+            const config = resolveConfig(this.config);
+            const guest = findGuest(this.state?.liveStats, guestId);
+            if (!this.state || !config.guestView || !hasApiBaseUrl(config) || !guest)
+                return;
+            this.state.guestView = { guest, status: 'loading' };
+            this.documentKeyHandler ??= (event) => {
+                if (event.key === 'Escape')
+                    this.closeGuestView();
+            };
+            document.addEventListener('keydown', this.documentKeyHandler);
+            this.renderGuestView();
+            this.startGuestViewTimeout();
+            this.requestGuestStats(guestId);
+        },
+        closeGuestView() {
+            clearTimeout(this.guestViewTimer);
+            this.guestViewTimer = undefined;
+            if (this.documentKeyHandler) {
+                document.removeEventListener('keydown', this.documentKeyHandler);
+                this.documentKeyHandler = undefined;
+            }
+            this.guestOverlay?.remove();
+            this.guestOverlay = undefined;
+            if (this.state)
+                this.state.guestView = undefined;
+        },
+        renderGuestView() {
+            const guestView = this.state?.guestView;
+            if (!guestView)
+                return;
+            const overlay = createGuestOverlay(buildGuestOverlayModel(guestView.guest, resolveConfig(this.config).apiBaseUrl, guestView.status), (key, variables) => this.translate(key, variables), {
+                onClose: () => this.closeGuestView(),
+                onRetry: () => {
+                    guestView.status = 'loading';
+                    this.renderGuestView();
+                    this.requestGuestStats(guestView.guest.guestId);
+                },
+                onActivity: () => this.startGuestViewTimeout(),
+            });
+            if (this.guestOverlay) {
+                this.guestOverlay.replaceWith(overlay);
+            }
+            else {
+                document.body.append(overlay);
+            }
+            this.guestOverlay = overlay;
+            overlay.querySelector('.cabin-overlay-close')?.focus();
+        },
+        startGuestViewTimeout() {
+            clearTimeout(this.guestViewTimer);
+            this.guestViewTimer = setTimeout(() => {
+                this.closeGuestView();
+            }, resolveConfig(this.config).guestViewTimeout);
+        },
+        requestGuestStats(guestId) {
+            const request = { identifier: this.identifier, guestId, config: this.config };
+            this.sendSocketNotification(SocketNotification.GUEST_STATS_REQUEST, request);
+        },
+        finishGuestStats(identifier, guestId, status) {
+            // The helper broadcasts to every instance of this module type. A reply for a view that was closed or switched
+            // to another guest in the meantime is stale.
+            const guestView = this.state?.guestView;
+            if (identifier !== this.identifier || guestView?.guest.guestId !== guestId || guestView.status !== 'loading')
+                return;
+            guestView.status = status;
+            this.renderGuestView();
         },
         loadData() {
             const config = resolveConfig(this.config);

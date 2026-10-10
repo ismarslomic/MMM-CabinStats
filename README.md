@@ -70,6 +70,8 @@ var config = {
 | `guestFactInterval` | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
 | `cabinFactInterval` | `45000`  | Milliseconds between cabin fun facts (30–60 s works well).                               |
 | `display`           | `full`   | `full`, `stats` (no guest or cabin facts) or `facts` (only those facts). See below.      |
+| `guestView`         | `true`   | Tapping a guest avatar opens a full-screen view for that guest. See below.               |
+| `guestViewTimeout`  | `60000`  | Milliseconds without touch before the guest view closes by itself.                       |
 | `showNextVisit`     | `true`   | Show the upcoming reservation.                                                           |
 | `showCabinFacts`    | `true`   | Show the cabin fun facts.                                                                |
 | `pauseWhenHidden`   | `false`  | Stop polling and rotation in `suspend()` and fetch fresh data immediately in `resume()`. |
@@ -96,12 +98,20 @@ var config = {
 
 Each instance polls the backend and rotates the facts on its own.
 
+### Guest view
+
+On a touch screen, tapping a guest avatar opens a full-screen view that covers all other modules, with a close button
+(✕). It also closes with Escape, and after `guestViewTimeout` without touch. The stats of the guest are fetched once
+when the view opens (`GET /api/stats/guests/{guestId}`) and are not refreshed while it is open. Avatars of the ongoing
+and the next reservation are tappable; set `guestView: false` to turn this off. The view currently shows a
+placeholder, because the backend endpoint returns an empty object for now.
+
 Invalid values fall back to the defaults, except `apiBaseUrl`, which has no default. Repeated start or resume calls
 never create duplicate timers. There are no API keys: the backend has no authentication.
 
 ### Troubleshooting
 
-- **"MMM-CabinStats: sett apiBaseUrl i config.js"**: `apiBaseUrl` is missing or not an absolute http(s) url.
+- **"MMM-CabinStats: sett apiBaseUrl i config.js"**: `apiBaseUrl` is missing or not an absolute http (s) url.
 - **Nothing shows**: the backend has never answered. Check the MagicMirror log for `could not load live stats`; it
   names the cause (network error, timeout, non-2xx status, invalid JSON, or a response that does not match the
   contract).
@@ -116,6 +126,9 @@ The module calls `GET {apiBaseUrl}/api/stats` and expects the live stats object:
 `allTimeNights`, `allTimeUniqueGuests`, and the fact lists `guestFunFacts`, `cabinFunFacts` and `nextVisitFunFacts`.
 Dates are `YYYY-MM-DD` strings. Each guest has `guestId`, `firstName`, `lastName`, `avatarUrl` (nullable, fetched with
 `GET {apiBaseUrl}{avatarUrl}`), `isFirstVisit` and `allTime.totalVisits` / `allTime.visitsRank`.
+
+When a guest avatar is tapped, the module also calls `GET {apiBaseUrl}/api/stats/guests/{guestId}` once. The response is
+an empty object for now.
 
 The full contract is the OpenAPI spec [`openapi/cabin-visits.json`](openapi/cabin-visits.json). The TypeScript types in
 `src/types/api.generated.ts` are generated from it, and `src/types/LiveStats.ts` adds a runtime guard that rejects
@@ -132,7 +145,9 @@ stale.
 3. Automatically recompile the _TypeScript_ files when they are changed with `npm run dev:watch` or run
    explicitly with `npm run build`
 
-The `pre-commit` hook only lints and formats staged files. It hides unstaged edits while rebuilding and staging the JavaScript bundles for TypeScript changes. Hooks are skipped in CI and production installs without development dependencies.
+The `pre-commit` hook only lints and formats staged files. It hides unstaged edits while rebuilding and staging the
+JavaScript bundles for TypeScript changes. Hooks are skipped in CI and production installs without development
+dependencies.
 
 Note! `pre-commit` hook is configured to run _eslint_, _prettier_ and _build_ before committing the changes to git,
 see [lint-staged](lint-staged.config.mjs) and [husky pre-commit](.husky/pre-commit) configuration files.
@@ -141,9 +156,13 @@ see [lint-staged](lint-staged.config.mjs) and [husky pre-commit](.husky/pre-comm
 
 A scoped npm override keeps deprecated packages out of the development install while preserving SARIF reporting:
 
-- `@microsoft/eslint-formatter-sarif` uses the project's ESLint version through `$eslint` instead of installing end-of-life ESLint 8. Remove this override when the formatter supports the project's ESLint version in its dependency or peer dependency range.
+- `@microsoft/eslint-formatter-sarif` uses the project's ESLint version through `$eslint` instead of installing
+  end-of-life ESLint 8. Remove this override when the formatter supports the project's ESLint version in its dependency
+  or peer dependency range.
 
-When changing the override, run `npm ci`, lint reporting, and unit tests with coverage. Check that the lockfile contains no deprecated packages and that coverage still includes the same source files. See [issue #792](https://github.com/ismarslomic/MMM-CabinStats/issues/792) for the investigation.
+When changing the override, run `npm ci`, lint reporting, and unit tests with coverage. Check that the lockfile contains
+no deprecated packages and that coverage still includes the same source files.
+See [issue #792](https://github.com/ismarslomic/MMM-CabinStats/issues/792) for the investigation.
 
 ### Linting and formatting
 
@@ -155,9 +174,13 @@ npm run prettier
 
 ### Verify distributed JavaScript
 
-The bundles and sourcemaps are checked in so users can install without development tools. Run `npm run build` and commit the generated files with TypeScript changes. `npm run check:generated` rebuilds and fails if the checked-in output is stale; CI runs the same check.
+The bundles and sourcemaps are checked in so users can install without development tools. Run `npm run build` and commit
+the generated files with TypeScript changes. `npm run check:generated` rebuilds and fails if the checked-in output is
+stale; CI runs the same check.
 
-Rollup emits readable JavaScript without Terser minification so module authors can inspect the installed code and runtime stack traces. The frontend remains a UMD bundle using MagicMirror's `Log` global, the helper remains CommonJS with external `node_helper` and `logger` dependencies, and both keep sourcemaps.
+Rollup emits readable JavaScript without Terser minification so module authors can inspect the installed code and
+runtime stack traces. The frontend remains a UMD bundle using MagicMirror's `Log` global, the helper remains CommonJS
+with external `node_helper` and `logger` dependencies, and both keep sourcemaps.
 
 ### Run unit tests locally
 
@@ -166,9 +189,14 @@ npm run test:unit
 npm run test:unit:coverage
 ```
 
-Unit tests use Vitest with explicit imports, TypeScript module aliases for MagicMirror mocks, and V8 coverage. This replaces Jest and ts-jest without a separate test compiler configuration. The built CommonJS helper is also executed with mocked MagicMirror dependencies to catch bundler interop errors. Separate `npm run typecheck` remains required because Vitest does not typecheck tests.
+Unit tests use Vitest with explicit imports, TypeScript module aliases for MagicMirror mocks, and V8 coverage. This
+replaces Jest and ts-jest without a separate test compiler configuration. The built CommonJS helper is also executed
+with mocked MagicMirror dependencies to catch bundler interop errors. Separate `npm run typecheck` remains required
+because Vitest does not typecheck tests.
 
-Coverage includes `src/**/*.ts` and produces `coverage/lcov.info` for Codecov. The built-in GitHub Actions reporter annotates failures, and the JUnit report is uploaded as an Actions artifact. The Jest-specific coverage override is no longer needed.
+Coverage includes `src/**/*.ts` and produces `coverage/lcov.info` for Codecov. The built-in GitHub Actions reporter
+annotates failures, and the JUnit report is uploaded as an Actions artifact. The Jest-specific coverage override is no
+longer needed.
 
 ### Run e2e tests locally
 
@@ -180,14 +208,17 @@ backend). Playwright starts both servers, waits for readiness and stops them aft
 running servers. Specs locate elements with `getByRole`, so the template must keep semantic elements and accessible
 names.
 
-To run locally, place a MagicMirror 2.38.0 checkout in `MagicMirror/`, install its server dependencies with `npm ci --omit=dev --omit=optional`, build and install this module in `MagicMirror/modules/MMM-CabinStats`, and copy `__tests__/e2e/mm/config.js` to `MagicMirror/config/config.js`. Then install the test browser and run:
+To run locally, place a MagicMirror 2.38.0 checkout in `MagicMirror/`, install its server dependencies with
+`npm ci --omit=dev --omit=optional`, build and install this module in `MagicMirror/modules/MMM-CabinStats`, and copy
+`__tests__/e2e/mm/config.js` to `MagicMirror/config/config.js`. Then install the test browser and run:
 
 ```bash
 npx playwright install chromium
 npm run test:e2e
 ```
 
-Use `npx playwright show-report` to open the HTML results. CI uploads the report and retains traces and screenshots for failed tests. This replaces the Cypress-specific CI action with the same npm command used locally.
+Use `npx playwright show-report` to open the HTML results. CI uploads the report and retains traces and screenshots for
+failed tests. This replaces the Cypress-specific CI action with the same npm command used locally.
 
 ### Codecov integration in Github actions
 

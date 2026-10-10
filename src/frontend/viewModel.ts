@@ -48,6 +48,8 @@ export type ViewModel = {
   view: ViewName
   /** Which parts the template renders, from the `display` option. */
   display: Display
+  /** True when the avatars are tappable and open the guest view, from the `guestView` option. */
+  guestView: boolean
   stay: StayView | null
   guests: GuestView[]
   /** Current guest fact in the rotation, `null` when there is none. Only set for the `occupied` view. */
@@ -72,6 +74,7 @@ export type ViewModelInput = {
 const emptyViewModel = (view: ViewName, display: Display, animationSpeed: number): ViewModel => ({
   view,
   display,
+  guestView: false,
   stay: null,
   guests: [],
   guestFact: null,
@@ -114,6 +117,7 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
   return {
     view: current ? 'occupied' : 'compact',
     display,
+    guestView: config.guestView,
     stay: current
       ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
       : null,

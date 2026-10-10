@@ -2,14 +2,23 @@ import { FrontendModule } from '../types/FrontendModule'
 import * as Log from 'logger'
 import { defaultConfig, hasApiBaseUrl, resolveConfig } from '../types/Config'
 import { SocketNotification } from '../constants/SocketNotifications'
-import { isLiveStatsError, isLiveStatsResponse, LiveStatsRequest } from '../types/Messages'
+import {
+  GuestStatsRequest,
+  isGuestStatsError,
+  isGuestStatsResponse,
+  isLiveStatsError,
+  isLiveStatsResponse,
+  LiveStatsRequest,
+} from '../types/Messages'
 import { buildViewModel } from './viewModel'
 import { TemplateData, toTemplateData } from './display'
 import { clampIndex, interleaveGuestFacts, nextIndex } from './rotation'
+import { buildGuestOverlayModel, findGuest } from './guestView'
+import { createGuestOverlay } from './guestOverlay'
 
 const frontendModule: Omit<
   FrontendModule,
-  'name' | 'identifier' | 'config' | 'file' | 'updateDom' | 'sendSocketNotification'
+  'name' | 'identifier' | 'config' | 'file' | 'translate' | 'updateDom' | 'sendSocketNotification'
 > &
   ThisType<FrontendModule> = {
   defaults: defaultConfig,
@@ -32,6 +41,21 @@ const frontendModule: Omit<
     this.startPolling()
     this.startRotation()
     this.updateDom()
+  },
+
+  notificationReceived(notification: string): void {
+    // The avatars are re-created on every render, so one delegated listener on the document serves them all.
+    if (notification === 'DOM_OBJECTS_CREATED' && !this.documentClickHandler) {
+      this.documentClickHandler = (event: MouseEvent) => {
+        const avatar =
+          event.target instanceof Element ? event.target.closest<HTMLElement>('[data-cabin-guest-id]') : null
+        // Several instances share the page: only react to the avatars of this one.
+        if (avatar?.closest('.module')?.id !== this.identifier) return
+        const guestId = avatar.dataset.cabinGuestId
+        if (guestId) this.openGuestView(guestId)
+      }
+      document.addEventListener('click', this.documentClickHandler)
+    }
   },
 
   getStyles() {
@@ -89,12 +113,28 @@ const frontendModule: Omit<
       }
       // Keep showing the last good data; the helper has already logged the details.
       Log.error(`${this.name} could not load live stats: ${payload.message}`)
+    } else if (notificationIdentifier === SocketNotification.GUEST_STATS_RESPONSE) {
+      if (!isGuestStatsResponse(payload)) {
+        Log.error(`${this.name} received an invalid guest stats response`)
+        return
+      }
+      this.finishGuestStats(payload.identifier, payload.guestId, 'loaded')
+    } else if (notificationIdentifier === SocketNotification.GUEST_STATS_ERROR) {
+      if (!isGuestStatsError(payload)) {
+        Log.error(`${this.name} received an invalid guest stats error`)
+        return
+      }
+      if (payload.identifier === this.identifier) {
+        Log.error(`${this.name} could not load guest stats: ${payload.message}`)
+      }
+      this.finishGuestStats(payload.identifier, payload.guestId, 'error')
     } else {
       Log.error(`${this.name} received unknown socket notification: '${notificationIdentifier}'`)
     }
   },
 
   suspend(): void {
+    this.closeGuestView()
     if (this.config.pauseWhenHidden) {
       this.isPollingSuspended = true
       this.stopPolling()
@@ -180,6 +220,79 @@ const frontendModule: Omit<
     if (length <= 1) return
     state.cabinFactIndex = nextIndex(state.cabinFactIndex, length)
     this.updateDom(config.animationSpeed)
+  },
+
+  openGuestView(guestId: string): void {
+    const config = resolveConfig(this.config)
+    const guest = findGuest(this.state?.liveStats, guestId)
+    if (!this.state || !config.guestView || !hasApiBaseUrl(config) || !guest) return
+
+    this.state.guestView = { guest, status: 'loading' }
+    this.documentKeyHandler ??= (event: KeyboardEvent) => {
+      if (event.key === 'Escape') this.closeGuestView()
+    }
+    document.addEventListener('keydown', this.documentKeyHandler)
+    this.renderGuestView()
+    this.startGuestViewTimeout()
+    this.requestGuestStats(guestId)
+  },
+
+  closeGuestView(): void {
+    clearTimeout(this.guestViewTimer)
+    this.guestViewTimer = undefined
+    if (this.documentKeyHandler) {
+      document.removeEventListener('keydown', this.documentKeyHandler)
+      this.documentKeyHandler = undefined
+    }
+    this.guestOverlay?.remove()
+    this.guestOverlay = undefined
+    if (this.state) this.state.guestView = undefined
+  },
+
+  renderGuestView(): void {
+    const guestView = this.state?.guestView
+    if (!guestView) return
+    const overlay = createGuestOverlay(
+      buildGuestOverlayModel(guestView.guest, resolveConfig(this.config).apiBaseUrl, guestView.status),
+      (key, variables) => this.translate(key, variables),
+      {
+        onClose: () => this.closeGuestView(),
+        onRetry: () => {
+          guestView.status = 'loading'
+          this.renderGuestView()
+          this.requestGuestStats(guestView.guest.guestId)
+        },
+        onActivity: () => this.startGuestViewTimeout(),
+      }
+    )
+    if (this.guestOverlay) {
+      this.guestOverlay.replaceWith(overlay)
+    } else {
+      document.body.append(overlay)
+    }
+    this.guestOverlay = overlay
+    overlay.querySelector<HTMLElement>('.cabin-overlay-close')?.focus()
+  },
+
+  startGuestViewTimeout(): void {
+    clearTimeout(this.guestViewTimer)
+    this.guestViewTimer = setTimeout(() => {
+      this.closeGuestView()
+    }, resolveConfig(this.config).guestViewTimeout)
+  },
+
+  requestGuestStats(guestId: string): void {
+    const request: GuestStatsRequest = { identifier: this.identifier, guestId, config: this.config }
+    this.sendSocketNotification(SocketNotification.GUEST_STATS_REQUEST, request)
+  },
+
+  finishGuestStats(identifier: string, guestId: string, status: 'loaded' | 'error'): void {
+    // The helper broadcasts to every instance of this module type. A reply for a view that was closed or switched
+    // to another guest in the meantime is stale.
+    const guestView = this.state?.guestView
+    if (identifier !== this.identifier || guestView?.guest.guestId !== guestId || guestView.status !== 'loading') return
+    guestView.status = status
+    this.renderGuestView()
   },
 
   loadData(): void {
