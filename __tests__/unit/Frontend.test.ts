@@ -35,6 +35,7 @@ describe('Frontend', () => {
       requestTimeout: 10_000,
       guestFactInterval: 18_000,
       cabinFactInterval: 45_000,
+      display: 'full',
       showNextVisit: true,
       showCabinFacts: true,
       pauseWhenHidden: false,

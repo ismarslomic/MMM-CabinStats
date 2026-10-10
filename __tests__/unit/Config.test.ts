@@ -61,6 +61,15 @@ describe('resolveConfig', () => {
     }
   )
 
+  test('accepts the known display values and falls back for anything else', () => {
+    for (const display of ['full', 'stats', 'facts'] as const) {
+      expect(resolveConfig({ display }).display).toBe(display)
+    }
+    for (const invalid of ['FULL', '', 1, null, undefined]) {
+      expect(resolveConfig({ display: invalid }).display).toBe('full')
+    }
+  })
+
   test('accepts animationSpeed 0 and rejects negative or fractional values', () => {
     expect(resolveConfig({ animationSpeed: 0 }).animationSpeed).toBe(0)
     expect(resolveConfig({ animationSpeed: -1 }).animationSpeed).toBe(defaultConfig.animationSpeed)

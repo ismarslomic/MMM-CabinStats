@@ -69,10 +69,32 @@ var config = {
 | `requestTimeout`    | `10000`  | Milliseconds before a backend request is aborted.                                        |
 | `guestFactInterval` | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
 | `cabinFactInterval` | `45000`  | Milliseconds between cabin fun facts (30–60 s works well).                               |
+| `display`           | `full`   | `full`, `stats` (no guest or cabin facts) or `facts` (only those facts). See below.      |
 | `showNextVisit`     | `true`   | Show the upcoming reservation.                                                           |
 | `showCabinFacts`    | `true`   | Show the cabin fun facts.                                                                |
 | `pauseWhenHidden`   | `false`  | Stop polling and rotation in `suspend()` and fetch fresh data immediately in `resume()`. |
 | `animationSpeed`    | `1000`   | Milliseconds of the fade when the content changes.                                       |
+
+To show the facts at another position than the rest, add the module twice, with the same `apiBaseUrl`:
+
+```js
+var config = {
+  modules: [
+    {
+      module: 'MMM-CabinStats',
+      position: 'top_left',
+      config: { apiBaseUrl: 'http://backend.example:8080', display: 'stats' },
+    },
+    {
+      module: 'MMM-CabinStats',
+      position: 'lower_third',
+      config: { apiBaseUrl: 'http://backend.example:8080', display: 'facts' },
+    },
+  ],
+}
+```
+
+Each instance polls the backend and rotates the facts on its own.
 
 Invalid values fall back to the defaults, except `apiBaseUrl`, which has no default. Repeated start or resume calls
 never create duplicate timers. There are no API keys: the backend has no authentication.

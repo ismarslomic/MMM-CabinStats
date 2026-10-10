@@ -1,4 +1,4 @@
-import { Config, normaliseApiBaseUrl } from '../types/Config'
+import { Config, Display, normaliseApiBaseUrl } from '../types/Config'
 import { LiveGuestStats, LiveStats } from '../types/LiveStats'
 import { initials } from './initials'
 import { clampIndex, interleaveGuestFacts } from './rotation'
@@ -46,6 +46,8 @@ export type NextVisitView = {
 /** Everything the template renders, derived from the stats and the rotation state. Pure data, no formatting. */
 export type ViewModel = {
   view: ViewName
+  /** Which parts the template renders, from the `display` option. */
+  display: Display
   stay: StayView | null
   guests: GuestView[]
   /** Current guest fact in the rotation, `null` when there is none. Only set for the `occupied` view. */
@@ -67,8 +69,9 @@ export type ViewModelInput = {
   cabinFactIndex: number
 }
 
-const emptyViewModel = (view: ViewName, animationSpeed: number): ViewModel => ({
+const emptyViewModel = (view: ViewName, display: Display, animationSpeed: number): ViewModel => ({
   view,
+  display,
   stay: null,
   guests: [],
   guestFact: null,
@@ -98,18 +101,19 @@ function toGuestView(guest: LiveGuestStats, apiBaseUrl: string | undefined): Gue
 
 /** Builds the template data from the config, the latest stats and the rotation indices. */
 export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactIndex }: ViewModelInput): ViewModel {
-  const { animationSpeed } = config
+  const { animationSpeed, display } = config
   const apiBaseUrl = normaliseApiBaseUrl(config.apiBaseUrl)
-  if (apiBaseUrl === undefined) return emptyViewModel('config-error', animationSpeed)
-  if (liveStats === undefined) return emptyViewModel('empty', animationSpeed)
+  if (apiBaseUrl === undefined) return emptyViewModel('config-error', display, animationSpeed)
+  if (liveStats === undefined) return emptyViewModel('empty', display, animationSpeed)
 
   const current = liveStats.isOccupied ? liveStats.currentReservation : null
   const next = config.showNextVisit ? liveStats.nextReservation : null
-  const guestFacts = current ? interleaveGuestFacts(liveStats.guestFunFacts) : []
-  const cabinFacts = config.showCabinFacts ? liveStats.cabinFunFacts : []
+  const guestFacts = current && display !== 'stats' ? interleaveGuestFacts(liveStats.guestFunFacts) : []
+  const cabinFacts = config.showCabinFacts && display !== 'stats' ? liveStats.cabinFunFacts : []
 
   return {
     view: current ? 'occupied' : 'compact',
+    display,
     stay: current
       ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
       : null,
