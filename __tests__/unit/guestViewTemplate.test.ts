@@ -156,6 +156,13 @@ describe('templates/guest-view.njk', () => {
     expect(html).toContain('<span class="cabin-profile-total-number">0</span>')
   })
 
+  test('does not use elements that MagicMirror styles globally', () => {
+    // `header` gets upper case text, a line height of 15px and a border from the main.css of MagicMirror.
+    const html = render({ status: 'loaded', profile: profile(regular) })
+
+    expect(html).not.toMatch(/<header[\s>]/)
+  })
+
   test('escapes the name of the guest', () => {
     const html = render({ status: 'loaded', profile: profile(regular) }, { ...anna, firstName: '<b>"Anna"</b>' })
 

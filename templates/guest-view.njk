@@ -2,6 +2,7 @@
   The full-screen guest view. It is rendered by Frontend.ts with the GuestOverlayModel and inserted into document.body,
   outside the module's own DOM, so a re-render of the module never touches it.
   Names from the backend are escaped before they go through `translate`, which marks its result as safe.
+  Do not use elements that MagicMirror styles globally, like `header` (upper case, small line height, border).
 #}
 {% macro month(number) %}{{ ('MONTH_SHORT_' + number) | translate }}{% endmacro %}
 
@@ -16,7 +17,7 @@
 <div class="cabin-overlay" role="dialog" aria-modal="true" aria-label="{{ 'GUEST_PROFILE_LABEL' | translate({ name: fullName | escape }) }}">
   <button type="button" class="cabin-overlay-close" data-cabin-action="close" aria-label="{{ 'CLOSE' | translate }}">✕</button>
 
-  <header class="cabin-overlay-header">
+  <div class="cabin-overlay-header">
     <div class="cabin-avatar cabin-avatar-large">
       <span class="cabin-avatar-initials" aria-hidden="true">{{ initials }}</span>
       {% if avatarUrl %}<img class="cabin-avatar-image" src="{{ avatarUrl }}" alt="">{% endif %}
@@ -25,7 +26,7 @@
       {% if profile and profile.rank %}<span class="cabin-overlay-rank{% if profile.rank.accent %} cabin-overlay-rank-first{% endif %}">{{ profile.rank.value }}</span> {% endif %}{{ fullName }}
     </h2>
     {% if profile and profile.facts.length %}<p class="cabin-profile-fact bright">{{ profile.facts[factIndex] or profile.facts[0] }}</p>{% endif %}
-  </header>
+  </div>
 
   <div class="cabin-overlay-body">
     {% if status == 'loading' %}

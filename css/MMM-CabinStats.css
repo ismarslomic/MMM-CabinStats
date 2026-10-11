@@ -217,6 +217,7 @@ div.MMM-CabinStats {
   flex-direction: column;
   align-items: center;
   gap: calc(1.5 * var(--cabin-u));
+  margin-bottom: calc(3 * var(--cabin-u));
 }
 
 .cabin-overlay-name,
@@ -273,10 +274,10 @@ div.MMM-CabinStats {
   flex: 1;
   flex-direction: column;
   align-items: center;
-  justify-content: space-evenly;
+  gap: calc(2.8 * var(--cabin-u));
   width: 100%;
   min-height: 0;
-  padding-top: calc(1.5 * var(--cabin-u));
+  padding-top: 0;
 }
 
 .cabin-profile-subtitle,
@@ -330,7 +331,7 @@ div.MMM-CabinStats {
 
 /* Row height shrinks when the grid gets more than seven years, so the view keeps fitting the screen. */
 .cabin-heatmap {
-  --cabin-row: min(calc(6 * var(--cabin-u)), calc(42 * var(--cabin-u) / var(--cabin-years)));
+  --cabin-row: min(calc(6.6 * var(--cabin-u)), calc(46 * var(--cabin-u) / var(--cabin-years)));
 
   width: 100%;
   table-layout: fixed;
@@ -486,9 +487,9 @@ div.MMM-CabinStats {
 
 .cabin-profile-fact {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  max-width: calc(80 * var(--cabin-u));
+  max-width: 100%;
   min-height: calc(9 * var(--cabin-u));
   font-size: calc(3.6 * var(--cabin-u));
   font-weight: 300;
