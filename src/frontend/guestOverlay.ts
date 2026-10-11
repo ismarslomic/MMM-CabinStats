@@ -1,10 +1,6 @@
-import { element, Translate } from './dom'
-import { GuestOverlayModel } from './guestView'
-import { createProfileFact, createProfileSection, updateProfileFact } from './guestProfileView'
-
 /** What the overlay reports back to the module. */
 export type GuestOverlayHandlers = {
-  /** The close button or Escape was used. */
+  /** The close button was used. */
   onClose: () => void
   /** The retry button of the error state was used. */
   onRetry: () => void
@@ -12,74 +8,35 @@ export type GuestOverlayHandlers = {
   onActivity: () => void
 }
 
-function createAvatar(model: GuestOverlayModel): HTMLElement {
-  const avatar = element('div', 'cabin-avatar cabin-avatar-large')
-  avatar.append(element('span', 'cabin-avatar-initials', model.initials))
-  if (model.avatarUrl) {
-    const image = element('img', 'cabin-avatar-image')
-    image.src = model.avatarUrl
-    image.alt = ''
-    avatar.append(image)
-  }
-  return avatar
-}
-
-function createBody(model: GuestOverlayModel, translate: Translate, handlers: GuestOverlayHandlers): HTMLElement {
-  const body = element('div', 'cabin-overlay-body')
-  if (model.status === 'loading') {
-    const status = element('p', 'cabin-overlay-status dimmed', translate('GUEST_PROFILE_LOADING'))
-    status.setAttribute('role', 'status')
-    body.append(status)
-  } else if (model.status === 'error') {
-    const message = element('p', 'cabin-overlay-status bright', translate('GUEST_PROFILE_ERROR'))
-    message.setAttribute('role', 'alert')
-    const retry = element('button', 'cabin-overlay-button', translate('GUEST_PROFILE_RETRY'))
-    retry.type = 'button'
-    retry.addEventListener('click', handlers.onRetry)
-    body.append(message, retry)
-  } else {
-    if (model.profile) body.append(createProfileSection(model.profile, translate))
-  }
-  return body
-}
-
 /**
- * Builds the full-screen guest view. It is meant to be appended to `document.body`, outside the module's own DOM, so
- * that a re-render of the module (live stats polling) never touches it.
+ * Turns the rendered `templates/guest-view.njk` into the full-screen guest view and connects the buttons. It is meant
+ * to be appended to `document.body`, outside the module's own DOM, so that a re-render of the module (live stats
+ * polling) never touches it.
+ *
+ * @throws Error when the html has no root element.
  */
-export function createGuestOverlay(
-  model: GuestOverlayModel,
-  translate: Translate,
-  handlers: GuestOverlayHandlers
-): HTMLElement {
-  const overlay = element('div', 'cabin-overlay')
-  overlay.setAttribute('role', 'dialog')
-  overlay.setAttribute('aria-modal', 'true')
-  overlay.setAttribute('aria-label', translate('GUEST_PROFILE_LABEL', { name: model.fullName }))
+export function createGuestOverlay(html: string, handlers: GuestOverlayHandlers): HTMLElement {
+  const host = document.createElement('div')
+  host.innerHTML = html
+  const overlay = host.firstElementChild
+  if (!(overlay instanceof HTMLElement)) throw new Error('The guest view template rendered no element')
+
   overlay.addEventListener('pointerdown', handlers.onActivity)
-
-  const close = element('button', 'cabin-overlay-close', '✕')
-  close.type = 'button'
-  close.setAttribute('aria-label', translate('CLOSE'))
-  close.addEventListener('click', handlers.onClose)
-
-  const header = element('header', 'cabin-overlay-header')
-  const name = element('h2', 'cabin-overlay-name bright')
-  if (model.profile?.rank) {
-    const rank = element('span', 'cabin-overlay-rank', model.profile.rank.value)
-    if (model.profile.rank.accent) rank.classList.add('cabin-overlay-rank-first')
-    name.append(rank, ' ')
-  }
-  name.append(model.fullName)
-  header.append(createAvatar(model), name)
-  const fact = model.profile && createProfileFact(model.profile, model.factIndex)
-  if (fact) header.append(fact)
-
-  overlay.append(close, header, createBody(model, translate, handlers))
+  overlay.addEventListener('click', (event) => {
+    const action = event.target instanceof Element ? event.target.closest('[data-cabin-action]') : null
+    if (action?.getAttribute('data-cabin-action') === 'close') handlers.onClose()
+    if (action?.getAttribute('data-cabin-action') === 'retry') handlers.onRetry()
+  })
   return overlay
 }
 
-/** Shows another fun fact in an open guest view. */
-export function updateGuestOverlayFact(overlay: HTMLElement, text: string): void {
-  updateProfileFact(overlay, text)
+/** Shows another fun fact in an open guest view with a fade, without rebuilding anything else. */
+export function updateGuestOverlayFact(overlay: ParentNode, text: string): void {
+  const fact = overlay.querySelector<HTMLElement>('.cabin-profile-fact')
+  if (!fact) return
+  fact.classList.remove('cabin-fade-in')
+  // Reading a layout property restarts the CSS animation.
+  void fact.offsetWidth
+  fact.textContent = text
+  fact.classList.add('cabin-fade-in')
 }

@@ -9,7 +9,7 @@
   <button type="button"
           class="cabin-guest-button"
           data-cabin-guest-id="{{ guest.guestId }}"
-          aria-label="{{ 'OPEN_GUEST_STATS' | translate({ name: guest.firstName }) }}">
+          aria-label="{{ 'OPEN_GUEST_STATS' | translate({ name: guest.firstName | escape }) }}">
   {% endif %}
 
   <div class="cabin-avatar cabin-avatar-{{ size }}">

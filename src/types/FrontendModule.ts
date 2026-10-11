@@ -72,9 +72,12 @@ export interface FrontendModule {
 
   /**
    * @official
-   * Translates a key of the translation file of the configured language, replacing `{name}` style variables.
+   * The nunjucks environment of this module: renders the templates in the module folder, with the `translate` filter.
+   * The callback gets the rendered html, or an error.
    */
-  translate: MagicMirrorModule['translate']
+  nunjucksEnvironment(): {
+    render(name: string, context: object, callback: (error: Error | null, html: string | null) => void): void
+  }
 
   /**
    * @official
@@ -121,6 +124,13 @@ export interface FrontendModule {
    * module's own DOM, so re-rendering the module never touches it.
    */
   guestOverlay?: HTMLElement
+
+  /**
+   * @custom
+   * Counts the renders of the guest view. Rendering is asynchronous, so a render that is no longer the latest, or
+   * that finishes after the view was closed, is dropped.
+   */
+  guestViewRenderCount: number
 
   /**
    * @custom
@@ -278,7 +288,7 @@ export interface FrontendModule {
 
   /**
    * @custom
-   * Replaces the guest view in `document.body` with one that reflects the current state.
+   * Renders `templates/guest-view.njk` for the current state and replaces the guest view in `document.body` with it.
    */
   renderGuestView(): void
 

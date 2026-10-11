@@ -20,10 +20,11 @@ import { GuestProfileStats } from '../types/GuestProfileStats'
 
 const frontendModule: Omit<
   FrontendModule,
-  'name' | 'identifier' | 'config' | 'file' | 'translate' | 'updateDom' | 'sendSocketNotification'
+  'name' | 'identifier' | 'config' | 'file' | 'nunjucksEnvironment' | 'updateDom' | 'sendSocketNotification'
 > &
   ThisType<FrontendModule> = {
   defaults: defaultConfig,
+  guestViewRenderCount: 0,
 
   start(): void {
     Log.debug(`${this.name} is starting`)
@@ -241,6 +242,7 @@ const frontendModule: Omit<
       document.removeEventListener('keydown', this.documentKeyHandler)
       this.documentKeyHandler = undefined
     }
+    this.guestViewRenderCount++
     this.guestOverlay?.remove()
     this.guestOverlay = undefined
     if (this.state) this.state.guestView = undefined
@@ -249,10 +251,17 @@ const frontendModule: Omit<
   renderGuestView(): void {
     const guestView = this.state?.guestView
     if (!guestView) return
-    const overlay = createGuestOverlay(
-      buildGuestOverlayModel(guestView, resolveConfig(this.config).apiBaseUrl, yearMonthOf(new Date())),
-      (key, variables) => this.translate(key, variables),
-      {
+    const renderId = ++this.guestViewRenderCount
+    const model = buildGuestOverlayModel(guestView, resolveConfig(this.config).apiBaseUrl, yearMonthOf(new Date()))
+
+    this.nunjucksEnvironment().render('templates/guest-view.njk', model, (error, html) => {
+      // The view may have been closed, or rendered again, while the template was loading.
+      if (renderId !== this.guestViewRenderCount || this.state?.guestView !== guestView) return
+      if (error || html === null) {
+        Log.error(`${this.name} could not render the guest view: ${error?.message ?? 'no output'}`)
+        return
+      }
+      const overlay = createGuestOverlay(html, {
         onClose: () => this.closeGuestView(),
         onRetry: () => {
           this.stopGuestViewFactRotation()
@@ -263,15 +272,15 @@ const frontendModule: Omit<
           this.requestGuestProfile(guestView.guest.guestId)
         },
         onActivity: () => this.startGuestViewTimeout(),
+      })
+      if (this.guestOverlay) {
+        this.guestOverlay.replaceWith(overlay)
+      } else {
+        document.body.append(overlay)
       }
-    )
-    if (this.guestOverlay) {
-      this.guestOverlay.replaceWith(overlay)
-    } else {
-      document.body.append(overlay)
-    }
-    this.guestOverlay = overlay
-    overlay.querySelector<HTMLElement>('.cabin-overlay-close')?.focus()
+      this.guestOverlay = overlay
+      overlay.querySelector<HTMLElement>('.cabin-overlay-close')?.focus()
+    })
   },
 
   startGuestViewTimeout(): void {

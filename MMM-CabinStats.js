@@ -409,16 +409,16 @@
         return isValid ? { day, month } : undefined;
     }
     /** Month abbreviation in Norwegian, e.g. `okt.` for month 10. */
-    function monthName$1(month) {
+    function monthName(month) {
         return monthNames[month - 1];
     }
     /** One day, e.g. `6. okt.`. */
     function formatSingleDay({ day, month }) {
-        return `${day}. ${monthName$1(month)}`;
+        return `${day}. ${monthName(month)}`;
     }
     /** Days within one month, e.g. `6.–9. okt.`. Both dates must be in the same month. */
     function formatDaysInSameMonth(start, end) {
-        return `${start.day}.–${end.day}. ${monthName$1(end.month)}`;
+        return `${start.day}.–${end.day}. ${monthName(end.month)}`;
     }
     /** Days across two months, e.g. `30. sep.–2. okt.`. */
     function formatDaysAcrossMonths(start, end) {
@@ -601,132 +601,31 @@
         };
     }
 
-    /** Creates an element with a class name and optional text. */
-    function element(tag, className, text) {
-        const node = document.createElement(tag);
-        node.className = className;
-        if (text !== undefined)
-            node.textContent = text;
-        return node;
-    }
-
-    const levels = [0, 1, 2, 3, 4];
-    function monthName(month, translate) {
-        return translate(`MONTH_SHORT_${month}`);
-    }
-    /** Accessible name of a heatmap cell, e.g. `Mai 2021: 2 besøk`. */
-    function cellLabel(cell, year, translate) {
-        const variables = { month: monthName(cell.month, translate), year, count: cell.count };
-        if (cell.state === 'nodata')
-            return translate('HEATMAP_CELL_NODATA', variables);
-        if (cell.state === 'future') {
-            return translate(cell.hasUpcoming ? 'HEATMAP_CELL_UPCOMING' : 'HEATMAP_CELL_FUTURE', variables);
-        }
-        const visits = translate(cell.count === 1 ? 'HEATMAP_CELL_ONE' : 'HEATMAP_CELL_OTHER', variables);
-        return cell.hasUpcoming ? `${visits} ${translate('HEATMAP_UPCOMING_SUFFIX')}` : visits;
-    }
-    function createCell(cell, year, translate) {
-        const td = element('td', 'cabin-heat-cell');
-        td.dataset.level = String(cell.level);
-        td.dataset.state = cell.state;
-        td.setAttribute('aria-label', cellLabel(cell, year, translate));
-        if (cell.hasUpcoming)
-            td.append(element('span', 'cabin-heat-dot'));
-        return td;
-    }
-    function createHeatmapTable(rows, translate) {
-        const table = element('table', 'cabin-heatmap');
-        table.style.setProperty('--cabin-years', String(rows.length));
-        table.setAttribute('aria-label', translate('HEATMAP_LABEL'));
-        const head = element('tr', 'cabin-heatmap-head');
-        head.append(element('td', 'cabin-heatmap-corner'));
-        for (let month = 1; month <= 12; month++) {
-            const th = element('th', 'cabin-heatmap-month', monthName(month, translate));
-            th.scope = 'col';
-            head.append(th);
-        }
-        table.createTHead().append(head);
-        const body = table.createTBody();
-        for (const row of rows) {
-            const tr = element('tr', 'cabin-heatmap-row');
-            const year = element('th', 'cabin-heatmap-year', String(row.year));
-            year.scope = 'row';
-            tr.append(year, ...row.cells.map((cell) => createCell(cell, row.year, translate)));
-            body.append(tr);
-        }
-        return table;
-    }
-    function createLegend(translate) {
-        const legend = element('div', 'cabin-heat-legend');
-        legend.setAttribute('aria-hidden', 'true');
-        for (const level of levels) {
-            const item = element('span', 'cabin-heat-legend-item');
-            const swatch = element('span', 'cabin-heat-cell cabin-heat-swatch');
-            swatch.dataset.level = String(level);
-            swatch.dataset.state = 'past';
-            item.append(swatch, element('span', 'cabin-heat-legend-label', level === 4 ? '4+' : String(level)));
-            legend.append(item);
-        }
-        const upcoming = element('span', 'cabin-heat-legend-item');
-        upcoming.append(element('span', 'cabin-heat-dot cabin-heat-dot-static'), element('span', 'cabin-heat-legend-label', translate('HEATMAP_LEGEND_UPCOMING')));
-        legend.append(upcoming);
-        return legend;
-    }
-    function tileLabelKey(tile) {
-        return `TILE_${tile.id.toUpperCase()}`;
-    }
-    function createTile(tile, translate) {
-        const item = element('li', 'cabin-tile');
-        const value = tile.of === undefined ? tile.value : translate('TILE_OF', { count: tile.value, total: tile.of });
-        item.append(element('span', 'cabin-tile-value', value), element('span', 'cabin-tile-label', translate(tileLabelKey(tile))));
-        return item;
-    }
-    function createTiles(tiles, className, translate) {
-        if (tiles.length === 0)
-            return undefined;
-        const list = element('ul', className);
-        list.append(...tiles.map((tile) => createTile(tile, translate)));
-        return list;
-    }
-    function createDates(profile, translate) {
-        const parts = [
-            profile.firstVisit ? translate('PROFILE_FIRST_VISIT', { date: profile.firstVisit }) : null,
-            profile.lastVisit ? translate('PROFILE_LAST_VISIT', { date: profile.lastVisit }) : null,
-        ].filter((part) => part !== null);
-        return parts.length > 0 ? element('p', 'cabin-profile-dates dimmed', parts.join(' · ')) : undefined;
-    }
     /**
-     * The fun fact shown under the name of the guest, `undefined` without facts. `factIndex` selects the fact shown
-     * first; later changes go through {@link updateProfileFact} so the rest stays untouched.
+     * Turns the rendered `templates/guest-view.njk` into the full-screen guest view and connects the buttons. It is meant
+     * to be appended to `document.body`, outside the module's own DOM, so that a re-render of the module (live stats
+     * polling) never touches it.
+     *
+     * @throws Error when the html has no root element.
      */
-    function createProfileFact(profile, factIndex) {
-        if (profile.facts.length === 0)
-            return undefined;
-        return element('p', 'cabin-profile-fact bright', profile.facts[factIndex] ?? profile.facts[0]);
+    function createGuestOverlay(html, handlers) {
+        const host = document.createElement('div');
+        host.innerHTML = html;
+        const overlay = host.firstElementChild;
+        if (!(overlay instanceof HTMLElement))
+            throw new Error('The guest view template rendered no element');
+        overlay.addEventListener('pointerdown', handlers.onActivity);
+        overlay.addEventListener('click', (event) => {
+            const action = event.target instanceof Element ? event.target.closest('[data-cabin-action]') : null;
+            if (action?.getAttribute('data-cabin-action') === 'close')
+                handlers.onClose();
+            if (action?.getAttribute('data-cabin-action') === 'retry')
+                handlers.onRetry();
+        });
+        return overlay;
     }
-    /** The profile of a guest: headline number, visit heatmap, stat tiles and the first and last visit. */
-    function createProfileSection(profile, translate) {
-        const section = element('div', 'cabin-profile');
-        section.append(element('p', 'cabin-profile-subtitle dimmed', translate('PROFILE_SUBTITLE', { first: profile.firstYear, last: profile.lastYear })));
-        const total = element('p', 'cabin-profile-total');
-        total.append(element('span', 'cabin-profile-total-number', String(profile.totalVisits)), element('span', 'cabin-profile-total-label dimmed', translate('PROFILE_TOTAL_LABEL', { count: profile.yearsInGrid })));
-        section.append(total);
-        const heatmap = element('section', 'cabin-heat');
-        heatmap.setAttribute('aria-label', translate('HEATMAP_LABEL'));
-        heatmap.append(element('h3', 'cabin-heat-title dimmed', translate('HEATMAP_LABEL')), createHeatmapTable(profile.heatmap, translate), createLegend(translate), element('p', 'cabin-heat-caption dimmed', translate('HEATMAP_CAPTION', { year: profile.lastYear })));
-        section.append(heatmap);
-        for (const node of [
-            createTiles(profile.primaryTiles, 'cabin-tiles cabin-tiles-primary', translate),
-            createTiles(profile.secondaryTiles, 'cabin-tiles cabin-tiles-secondary', translate),
-            createDates(profile, translate),
-        ]) {
-            if (node)
-                section.append(node);
-        }
-        return section;
-    }
-    /** Shows another fun fact with a fade, without rebuilding anything else. */
-    function updateProfileFact(overlay, text) {
+    /** Shows another fun fact in an open guest view with a fade, without rebuilding anything else. */
+    function updateGuestOverlayFact(overlay, text) {
         const fact = overlay.querySelector('.cabin-profile-fact');
         if (!fact)
             return;
@@ -737,75 +636,9 @@
         fact.classList.add('cabin-fade-in');
     }
 
-    function createAvatar(model) {
-        const avatar = element('div', 'cabin-avatar cabin-avatar-large');
-        avatar.append(element('span', 'cabin-avatar-initials', model.initials));
-        if (model.avatarUrl) {
-            const image = element('img', 'cabin-avatar-image');
-            image.src = model.avatarUrl;
-            image.alt = '';
-            avatar.append(image);
-        }
-        return avatar;
-    }
-    function createBody(model, translate, handlers) {
-        const body = element('div', 'cabin-overlay-body');
-        if (model.status === 'loading') {
-            const status = element('p', 'cabin-overlay-status dimmed', translate('GUEST_PROFILE_LOADING'));
-            status.setAttribute('role', 'status');
-            body.append(status);
-        }
-        else if (model.status === 'error') {
-            const message = element('p', 'cabin-overlay-status bright', translate('GUEST_PROFILE_ERROR'));
-            message.setAttribute('role', 'alert');
-            const retry = element('button', 'cabin-overlay-button', translate('GUEST_PROFILE_RETRY'));
-            retry.type = 'button';
-            retry.addEventListener('click', handlers.onRetry);
-            body.append(message, retry);
-        }
-        else {
-            if (model.profile)
-                body.append(createProfileSection(model.profile, translate));
-        }
-        return body;
-    }
-    /**
-     * Builds the full-screen guest view. It is meant to be appended to `document.body`, outside the module's own DOM, so
-     * that a re-render of the module (live stats polling) never touches it.
-     */
-    function createGuestOverlay(model, translate, handlers) {
-        const overlay = element('div', 'cabin-overlay');
-        overlay.setAttribute('role', 'dialog');
-        overlay.setAttribute('aria-modal', 'true');
-        overlay.setAttribute('aria-label', translate('GUEST_PROFILE_LABEL', { name: model.fullName }));
-        overlay.addEventListener('pointerdown', handlers.onActivity);
-        const close = element('button', 'cabin-overlay-close', '✕');
-        close.type = 'button';
-        close.setAttribute('aria-label', translate('CLOSE'));
-        close.addEventListener('click', handlers.onClose);
-        const header = element('header', 'cabin-overlay-header');
-        const name = element('h2', 'cabin-overlay-name bright');
-        if (model.profile?.rank) {
-            const rank = element('span', 'cabin-overlay-rank', model.profile.rank.value);
-            if (model.profile.rank.accent)
-                rank.classList.add('cabin-overlay-rank-first');
-            name.append(rank, ' ');
-        }
-        name.append(model.fullName);
-        header.append(createAvatar(model), name);
-        const fact = model.profile && createProfileFact(model.profile, model.factIndex);
-        if (fact)
-            header.append(fact);
-        overlay.append(close, header, createBody(model, translate, handlers));
-        return overlay;
-    }
-    /** Shows another fun fact in an open guest view. */
-    function updateGuestOverlayFact(overlay, text) {
-        updateProfileFact(overlay, text);
-    }
-
     const frontendModule = {
         defaults: defaultConfig,
+        guestViewRenderCount: 0,
         start() {
             Log__namespace.debug(`${this.name} is starting`);
             this.state = { guestFactIndex: 0, cabinFactIndex: 0 };
@@ -1012,6 +845,7 @@
                 document.removeEventListener('keydown', this.documentKeyHandler);
                 this.documentKeyHandler = undefined;
             }
+            this.guestViewRenderCount++;
             this.guestOverlay?.remove();
             this.guestOverlay = undefined;
             if (this.state)
@@ -1021,26 +855,37 @@
             const guestView = this.state?.guestView;
             if (!guestView)
                 return;
-            const overlay = createGuestOverlay(buildGuestOverlayModel(guestView, resolveConfig(this.config).apiBaseUrl, yearMonthOf(new Date())), (key, variables) => this.translate(key, variables), {
-                onClose: () => this.closeGuestView(),
-                onRetry: () => {
-                    this.stopGuestViewFactRotation();
-                    guestView.status = 'loading';
-                    guestView.profile = undefined;
-                    guestView.factIndex = 0;
-                    this.renderGuestView();
-                    this.requestGuestProfile(guestView.guest.guestId);
-                },
-                onActivity: () => this.startGuestViewTimeout(),
+            const renderId = ++this.guestViewRenderCount;
+            const model = buildGuestOverlayModel(guestView, resolveConfig(this.config).apiBaseUrl, yearMonthOf(new Date()));
+            this.nunjucksEnvironment().render('templates/guest-view.njk', model, (error, html) => {
+                // The view may have been closed, or rendered again, while the template was loading.
+                if (renderId !== this.guestViewRenderCount || this.state?.guestView !== guestView)
+                    return;
+                if (error || html === null) {
+                    Log__namespace.error(`${this.name} could not render the guest view: ${error?.message ?? 'no output'}`);
+                    return;
+                }
+                const overlay = createGuestOverlay(html, {
+                    onClose: () => this.closeGuestView(),
+                    onRetry: () => {
+                        this.stopGuestViewFactRotation();
+                        guestView.status = 'loading';
+                        guestView.profile = undefined;
+                        guestView.factIndex = 0;
+                        this.renderGuestView();
+                        this.requestGuestProfile(guestView.guest.guestId);
+                    },
+                    onActivity: () => this.startGuestViewTimeout(),
+                });
+                if (this.guestOverlay) {
+                    this.guestOverlay.replaceWith(overlay);
+                }
+                else {
+                    document.body.append(overlay);
+                }
+                this.guestOverlay = overlay;
+                overlay.querySelector('.cabin-overlay-close')?.focus();
             });
-            if (this.guestOverlay) {
-                this.guestOverlay.replaceWith(overlay);
-            }
-            else {
-                document.body.append(overlay);
-            }
-            this.guestOverlay = overlay;
-            overlay.querySelector('.cabin-overlay-close')?.focus();
         },
         startGuestViewTimeout() {
             clearTimeout(this.guestViewTimer);

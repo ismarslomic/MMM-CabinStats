@@ -8,7 +8,8 @@ const keys = new Set(Object.keys(translations))
 
 function sourceFiles(): { file: string; text: string }[] {
   const sources = readdirSync(join(root, 'src/frontend')).map((name) => join(root, 'src/frontend', name))
-  return [...sources, join(root, 'templates/MMM-CabinStats.njk')].map((file) => ({
+  const templates = readdirSync(join(root, 'templates')).map((name) => join(root, 'templates', name))
+  return [...sources, ...templates].map((file) => ({
     file,
     text: readFileSync(file, 'utf8'),
   }))
@@ -17,9 +18,12 @@ function sourceFiles(): { file: string; text: string }[] {
 describe('translations/nb.json', () => {
   test('has every key the code and the template use', () => {
     const used = new Set<string>()
-    for (const { text } of sourceFiles()) {
+    for (const { file, text } of sourceFiles()) {
       for (const match of text.matchAll(/translate\('([A-Z][A-Z0-9_]+)'/g)) used.add(match[1])
-      for (const match of text.matchAll(/'([A-Z][A-Z0-9_]+)'\s*\|\s*translate/g)) used.add(match[1])
+      // In a template every quoted upper case word is a key, also in `('A' if x else 'B') | translate`.
+      if (file.endsWith('.njk')) {
+        for (const match of text.matchAll(/'([A-Z][A-Z0-9_]*[A-Z0-9])'/g)) used.add(match[1])
+      }
     }
     expect(used.size).toBeGreaterThan(20)
     expect([...used].filter((key) => !keys.has(key))).toEqual([])

@@ -8,6 +8,12 @@ import guestProfile from '../fixtures/guest-profile-regular.json'
 
 vi.mock('../../src/frontend/guestOverlay', () => ({ createGuestOverlay: vi.fn(), updateGuestOverlayFact: vi.fn() }))
 
+type RenderCallback = (error: Error | null, html: string | null) => void
+/** The nunjucks environment of the module: renders at once, so the guest view appears synchronously in the tests. */
+const renderMock = vi.fn((_template: string, _context: object, callback: RenderCallback) =>
+  callback(null, '<div class="cabin-overlay"></div>')
+)
+
 const mockModuleRegister = vi.fn()
 const moduleMock: MM2ModuleHelper = { register: mockModuleRegister }
 global.Module = moduleMock
@@ -363,8 +369,8 @@ describe('Frontend', () => {
     let overlays: { remove: ReturnType<typeof vi.fn>; replaceWith: ReturnType<typeof vi.fn> }[]
     const documentMock = { body: { append: vi.fn() }, addEventListener: vi.fn(), removeEventListener: vi.fn() }
 
-    const lastModel = () => createGuestOverlay.mock.lastCall![0] as OverlayModel
-    const lastHandlers = () => createGuestOverlay.mock.lastCall![2] as OverlayHandlers
+    const lastModel = () => renderMock.mock.lastCall![1] as OverlayModel
+    const lastHandlers = () => createGuestOverlay.mock.lastCall![1] as OverlayHandlers
 
     const loaded = (configOverrides: Record<string, unknown> = {}) => {
       const { implementation } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall, configOverrides)
@@ -425,7 +431,7 @@ describe('Frontend', () => {
     ])('does not open the view for %s', (_name, { guestId, config }) => {
       const module = loaded(config)
       module.openGuestView(guestId)
-      expect(createGuestOverlay).not.toHaveBeenCalled()
+      expect(renderMock).not.toHaveBeenCalled()
       expect(sendSocketNotificationMock).not.toHaveBeenCalled()
     })
 
@@ -433,7 +439,7 @@ describe('Frontend', () => {
       const { implementation } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall)
       implementation.start()
       implementation.openGuestView('guest-1')
-      expect(createGuestOverlay).not.toHaveBeenCalled()
+      expect(renderMock).not.toHaveBeenCalled()
     })
 
     it('renders the stats and never polls while the view is open', () => {
@@ -464,13 +470,13 @@ describe('Frontend', () => {
 
       it('shows the next fact on every interval without re-rendering the view', () => {
         open()
-        createGuestOverlay.mockClear()
+        renderMock.mockClear()
 
         vi.advanceTimersByTime(5_000)
         expect(updateGuestOverlayFact).toHaveBeenLastCalledWith(overlays[1], facts[1])
         vi.advanceTimersByTime(5_000)
         expect(updateGuestOverlayFact).toHaveBeenLastCalledWith(overlays[1], facts[2])
-        expect(createGuestOverlay).not.toHaveBeenCalled()
+        expect(renderMock).not.toHaveBeenCalled()
       })
 
       it('wraps around after the last fact', () => {
@@ -512,6 +518,62 @@ describe('Frontend', () => {
       })
     })
 
+    it('renders the guest view template with the model and builds the overlay from the html', () => {
+      const module = loaded()
+      module.openGuestView('guest-1')
+
+      expect(renderMock).toHaveBeenCalledWith('templates/guest-view.njk', expect.anything(), expect.any(Function))
+      expect(createGuestOverlay).toHaveBeenCalledWith('<div class="cabin-overlay"></div>', expect.anything())
+    })
+
+    describe('asynchronous rendering', () => {
+      let finish: RenderCallback[]
+
+      beforeEach(() => {
+        finish = []
+        renderMock.mockImplementation((_template, _context, callback) => {
+          finish.push(callback)
+        })
+      })
+
+      afterEach(() => {
+        renderMock.mockImplementation((_template, _context, callback) =>
+          callback(null, '<div class="cabin-overlay"></div>')
+        )
+      })
+
+      it('drops a render that finishes after the view was closed', () => {
+        const module = loaded()
+        module.openGuestView('guest-1')
+        module.closeGuestView()
+        finish[0](null, '<div></div>')
+
+        expect(createGuestOverlay).not.toHaveBeenCalled()
+        expect(documentMock.body.append).not.toHaveBeenCalled()
+      })
+
+      it('drops an older render that finishes after a newer one', () => {
+        const module = loaded()
+        module.openGuestView('guest-1')
+        module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
+        finish[1](null, '<div id="new"></div>')
+        finish[0](null, '<div id="old"></div>')
+
+        expect(createGuestOverlay).toHaveBeenCalledOnce()
+        expect(createGuestOverlay).toHaveBeenCalledWith('<div id="new"></div>', expect.anything())
+      })
+
+      it('logs a template error and shows no view', async () => {
+        const module = loaded()
+        const Log = await import('logger')
+        module.openGuestView('guest-1')
+        finish[0](new Error('template not found'), null)
+
+        expect(Log.error).toHaveBeenCalledWith(expect.stringContaining('template not found'))
+        expect(documentMock.body.append).not.toHaveBeenCalled()
+      })
+    })
+
     it('shows an error, logs it and retries with a new request', async () => {
       const module = loaded()
       module.openGuestView('guest-1')
@@ -533,15 +595,15 @@ describe('Frontend', () => {
     it('ignores replies for other instances, other guests and closed views', () => {
       const module = loaded()
       module.openGuestView('guest-1')
-      createGuestOverlay.mockClear()
+      renderMock.mockClear()
 
       module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse('guest-1', 'module_2'))
       module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse('guest-2'))
-      expect(createGuestOverlay).not.toHaveBeenCalled()
+      expect(renderMock).not.toHaveBeenCalled()
 
       module.closeGuestView()
       module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
-      expect(createGuestOverlay).not.toHaveBeenCalled()
+      expect(renderMock).not.toHaveBeenCalled()
     })
 
     it('logs malformed guest profile messages', async () => {
@@ -589,10 +651,10 @@ describe('Frontend', () => {
     it('keeps an open view unchanged when live stats arrive', () => {
       const module = loaded()
       module.openGuestView('guest-1')
-      createGuestOverlay.mockClear()
+      renderMock.mockClear()
 
       module.socketNotificationReceived('LIVE_STATS_RESPONSE', response(notOccupiedNext))
-      expect(createGuestOverlay).not.toHaveBeenCalled()
+      expect(renderMock).not.toHaveBeenCalled()
       expect(overlays[0].remove).not.toHaveBeenCalled()
     })
 
@@ -646,7 +708,7 @@ describe('Frontend', () => {
         const module = loaded()
         module.notificationReceived('DOM_OBJECTS_CREATED')
         clickHandler()({ target })
-        expect(createGuestOverlay).not.toHaveBeenCalled()
+        expect(renderMock).not.toHaveBeenCalled()
       })
     })
   })
@@ -698,7 +760,7 @@ const checkAndExtractRegistration = (call?: unknown, configOverrides: Record<str
     updateDom: vi.fn(),
     file: (fileName: string) => `/file/${fileName}`,
     sendSocketNotification: sendSocketNotificationMock,
-    translate: (key: string) => key,
+    nunjucksEnvironment: () => ({ render: renderMock }),
   }
   // Make use of this
   enhancedImplementation.getStyles = enhancedImplementation.getStyles.bind(enhancedImplementation)

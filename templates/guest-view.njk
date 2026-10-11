@@ -1,0 +1,105 @@
+{#
+  The full-screen guest view. It is rendered by Frontend.ts with the GuestOverlayModel and inserted into document.body,
+  outside the module's own DOM, so a re-render of the module never touches it.
+  Names from the backend are escaped before they go through `translate`, which marks its result as safe.
+#}
+{% macro month(number) %}{{ ('MONTH_SHORT_' + number) | translate }}{% endmacro %}
+
+{% macro cellLabel(cell, year) %}
+{%- set variables = { month: month(cell.month) | trim, year: year, count: cell.count } -%}
+{%- if cell.state == 'nodata' -%}{{ 'HEATMAP_CELL_NODATA' | translate(variables) }}
+{%- elif cell.state == 'future' -%}{{ ('HEATMAP_CELL_UPCOMING' if cell.hasUpcoming else 'HEATMAP_CELL_FUTURE') | translate(variables) }}
+{%- else -%}{{ ('HEATMAP_CELL_ONE' if cell.count == 1 else 'HEATMAP_CELL_OTHER') | translate(variables) }}{% if cell.hasUpcoming %} {{ 'HEATMAP_UPCOMING_SUFFIX' | translate }}{% endif %}
+{%- endif -%}
+{% endmacro %}
+
+<div class="cabin-overlay" role="dialog" aria-modal="true" aria-label="{{ 'GUEST_PROFILE_LABEL' | translate({ name: fullName | escape }) }}">
+  <button type="button" class="cabin-overlay-close" data-cabin-action="close" aria-label="{{ 'CLOSE' | translate }}">✕</button>
+
+  <header class="cabin-overlay-header">
+    <div class="cabin-avatar cabin-avatar-large">
+      <span class="cabin-avatar-initials" aria-hidden="true">{{ initials }}</span>
+      {% if avatarUrl %}<img class="cabin-avatar-image" src="{{ avatarUrl }}" alt="">{% endif %}
+    </div>
+    <h2 class="cabin-overlay-name bright">
+      {% if profile and profile.rank %}<span class="cabin-overlay-rank{% if profile.rank.accent %} cabin-overlay-rank-first{% endif %}">{{ profile.rank.value }}</span> {% endif %}{{ fullName }}
+    </h2>
+    {% if profile and profile.facts.length %}<p class="cabin-profile-fact bright">{{ profile.facts[factIndex] or profile.facts[0] }}</p>{% endif %}
+  </header>
+
+  <div class="cabin-overlay-body">
+    {% if status == 'loading' %}
+    <p class="cabin-overlay-status dimmed" role="status">{{ 'GUEST_PROFILE_LOADING' | translate }}</p>
+    {% elif status == 'error' %}
+    <p class="cabin-overlay-status bright" role="alert">{{ 'GUEST_PROFILE_ERROR' | translate }}</p>
+    <button type="button" class="cabin-overlay-button" data-cabin-action="retry">{{ 'GUEST_PROFILE_RETRY' | translate }}</button>
+    {% elif profile %}
+    <div class="cabin-profile">
+      <p class="cabin-profile-subtitle dimmed">{{ 'PROFILE_SUBTITLE' | translate({ first: profile.firstYear, last: profile.lastYear }) }}</p>
+
+      <p class="cabin-profile-total">
+        <span class="cabin-profile-total-number">{{ profile.totalVisits }}</span>
+        <span class="cabin-profile-total-label dimmed">{{ 'PROFILE_TOTAL_LABEL' | translate({ count: profile.yearsInGrid }) }}</span>
+      </p>
+
+      <section class="cabin-heat" aria-label="{{ 'HEATMAP_LABEL' | translate }}">
+        <h3 class="cabin-heat-title dimmed">{{ 'HEATMAP_LABEL' | translate }}</h3>
+        <table class="cabin-heatmap" style="--cabin-years: {{ profile.heatmap.length }}" aria-label="{{ 'HEATMAP_LABEL' | translate }}">
+          <thead>
+            <tr class="cabin-heatmap-head">
+              <td class="cabin-heatmap-corner"></td>
+              {% for number in range(1, 13) %}<th class="cabin-heatmap-month" scope="col">{{ month(number) }}</th>{% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in profile.heatmap %}
+            <tr class="cabin-heatmap-row">
+              <th class="cabin-heatmap-year" scope="row">{{ row.year }}</th>
+              {% for cell in row.cells %}
+              <td class="cabin-heat-cell" data-level="{{ cell.level }}" data-state="{{ cell.state }}" aria-label="{{ cellLabel(cell, row.year) | trim }}">{% if cell.hasUpcoming %}<span class="cabin-heat-dot"></span>{% endif %}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <div class="cabin-heat-legend" aria-hidden="true">
+          {% for level in range(0, 5) %}
+          <span class="cabin-heat-legend-item"><span class="cabin-heat-cell cabin-heat-swatch" data-level="{{ level }}" data-state="past"></span><span class="cabin-heat-legend-label">{{ '4+' if level == 4 else level }}</span></span>
+          {% endfor %}
+          <span class="cabin-heat-legend-item"><span class="cabin-heat-dot cabin-heat-dot-static"></span><span class="cabin-heat-legend-label">{{ 'HEATMAP_LEGEND_UPCOMING' | translate }}</span></span>
+        </div>
+        <p class="cabin-heat-caption dimmed">{{ 'HEATMAP_CAPTION' | translate({ year: profile.lastYear }) }}</p>
+      </section>
+
+      {% if profile.primaryTiles.length %}
+      <ul class="cabin-tiles cabin-tiles-primary">
+        {% for tile in profile.primaryTiles %}
+        <li class="cabin-tile">
+          <span class="cabin-tile-value">{% if tile.of !== undefined %}{{ 'TILE_OF' | translate({ count: tile.value, total: tile.of }) }}{% else %}{{ tile.value }}{% endif %}</span>
+          <span class="cabin-tile-label">{{ ('TILE_' + (tile.id | upper)) | translate }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if profile.secondaryTiles.length %}
+      <ul class="cabin-tiles cabin-tiles-secondary">
+        {% for tile in profile.secondaryTiles %}
+        <li class="cabin-tile">
+          <span class="cabin-tile-value">{{ tile.value }}</span>
+          <span class="cabin-tile-label">{{ ('TILE_' + (tile.id | upper)) | translate }}</span>
+        </li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if profile.firstVisit or profile.lastVisit %}
+      <p class="cabin-profile-dates dimmed">
+        {%- if profile.firstVisit %}{{ 'PROFILE_FIRST_VISIT' | translate({ date: profile.firstVisit }) }}{% endif -%}
+        {%- if profile.firstVisit and profile.lastVisit %} · {% endif -%}
+        {%- if profile.lastVisit %}{{ 'PROFILE_LAST_VISIT' | translate({ date: profile.lastVisit }) }}{% endif -%}
+      </p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
