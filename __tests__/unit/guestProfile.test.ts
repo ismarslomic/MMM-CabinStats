@@ -105,24 +105,23 @@ describe('buildProfileModel', () => {
     expect(Number(primaryTiles[2].value)).toBeLessThan(7)
   })
 
-  test('shows the rank among guests for a guest, and among all for family', () => {
-    expect(model(sporadic).secondaryTiles.find((tile) => tile.id === 'rank')).toEqual({
-      id: 'rank',
-      value: '#9',
-      accent: false,
-      rankAmong: 'guests',
-    })
-    expect(model(regular).secondaryTiles.find((tile) => tile.id === 'rank')).toMatchObject({
-      value: '#1',
-      accent: true,
-      rankAmong: 'all',
-    })
+  test('puts the rank among guests on a guest, and the rank among all on family', () => {
+    expect(model(sporadic).rank).toEqual({ value: '#9', accent: false })
+    expect(model(regular).rank).toEqual({ value: '#1', accent: true })
   })
 
-  test('hides the rank when there is none', () => {
+  test('has no rank tile, and no rank without a rank', () => {
     const profile = structuredClone(sporadic)
     ;(profile.guest.allTime as Record<string, unknown>).visitsRankAmongGuests = null
-    expect(ids(model(profile).secondaryTiles)).not.toContain('rank')
+    expect(model(profile).rank).toBeNull()
+    expect(ids(model(sporadic).secondaryTiles)).not.toContain('rank')
+  })
+
+  test('shows the total days and nights, from the guest stats', () => {
+    const tiles = model(regular).secondaryTiles
+    expect(tiles.find((tile) => tile.id === 'days')?.value).toBe(String(regular.guest.allTime.totalDays))
+    expect(tiles.find((tile) => tile.id === 'nights')?.value).toBe(String(regular.guest.allTime.totalNights))
+    expect(ids(tiles)).toEqual(['days', 'nights', 'longestStay', 'visitsThisYear'])
   })
 
   test('hides the visits this year tile without visits this year', () => {
@@ -156,6 +155,7 @@ describe('buildProfileModel', () => {
       totalVisits: 0,
       primaryTiles: [],
       secondaryTiles: [],
+      rank: null,
       firstVisit: null,
       lastVisit: null,
       facts: [],

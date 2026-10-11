@@ -229,6 +229,15 @@ div.MMM-CabinStats {
   font-weight: 300;
 }
 
+.cabin-overlay-rank {
+  color: var(--cabin-mint);
+  font-weight: 700;
+}
+
+.cabin-overlay-rank-first {
+  color: var(--cabin-accent);
+}
+
 .cabin-overlay-body {
   display: flex;
   flex: 1;
@@ -471,10 +480,6 @@ div.MMM-CabinStats {
   font-size: calc(2 * var(--cabin-u));
 }
 
-.cabin-tile-accent .cabin-tile-value {
-  color: var(--cabin-accent);
-}
-
 .cabin-profile-dates {
   font-size: calc(2.2 * var(--cabin-u));
 }
@@ -483,6 +488,7 @@ div.MMM-CabinStats {
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: calc(80 * var(--cabin-u));
   min-height: calc(9 * var(--cabin-u));
   font-size: calc(3.6 * var(--cabin-u));
   font-weight: 300;

@@ -73,13 +73,11 @@ function createLegend(translate: Translate): HTMLElement {
 }
 
 function tileLabelKey(tile: ProfileTile): string {
-  if (tile.id === 'rank') return tile.rankAmong === 'all' ? 'TILE_RANK_ALL' : 'TILE_RANK_GUESTS'
   return `TILE_${tile.id.toUpperCase()}`
 }
 
 function createTile(tile: ProfileTile, translate: Translate): HTMLElement {
   const item = element('li', 'cabin-tile')
-  if (tile.accent) item.classList.add('cabin-tile-accent')
   const value = tile.of === undefined ? tile.value : translate('TILE_OF', { count: tile.value, total: tile.of })
   item.append(
     element('span', 'cabin-tile-value', value),
@@ -104,10 +102,16 @@ function createDates(profile: ProfileModel, translate: Translate): HTMLElement |
 }
 
 /**
- * The profile of a guest: headline number, visit heatmap, stat tiles and one fun fact. `factIndex` selects the fact
- * shown first; later changes go through {@link updateProfileFact} so the rest stays untouched.
+ * The fun fact shown under the name of the guest, `undefined` without facts. `factIndex` selects the fact shown
+ * first; later changes go through {@link updateProfileFact} so the rest stays untouched.
  */
-export function createProfileSection(profile: ProfileModel, factIndex: number, translate: Translate): HTMLElement {
+export function createProfileFact(profile: ProfileModel, factIndex: number): HTMLElement | undefined {
+  if (profile.facts.length === 0) return undefined
+  return element('p', 'cabin-profile-fact bright', profile.facts[factIndex] ?? profile.facts[0])
+}
+
+/** The profile of a guest: headline number, visit heatmap, stat tiles and the first and last visit. */
+export function createProfileSection(profile: ProfileModel, translate: Translate): HTMLElement {
   const section = element('div', 'cabin-profile')
 
   section.append(
@@ -147,10 +151,6 @@ export function createProfileSection(profile: ProfileModel, factIndex: number, t
     if (node) section.append(node)
   }
 
-  if (profile.facts.length > 0) {
-    const fact = element('p', 'cabin-profile-fact bright', profile.facts[factIndex] ?? profile.facts[0])
-    section.append(fact)
-  }
   return section
 }
 

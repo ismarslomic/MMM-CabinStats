@@ -31,11 +31,10 @@ describe('translations/nb.json', () => {
       'TILE_VISITSPERYEAR',
       'TILE_MAXPERMONTH',
       'TILE_YEARSWITHVISITS',
+      'TILE_DAYS',
       'TILE_NIGHTS',
       'TILE_LONGESTSTAY',
       'TILE_VISITSTHISYEAR',
-      'TILE_RANK_GUESTS',
-      'TILE_RANK_ALL',
     ]
     expect(built.filter((key) => !keys.has(key))).toEqual([])
   })

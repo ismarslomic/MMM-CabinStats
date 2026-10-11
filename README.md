@@ -105,14 +105,16 @@ On a touch screen, tapping a guest avatar opens a full-screen view that covers a
 (✕). It also closes with Escape, and after `guestViewTimeout` without touch. Avatars of the ongoing and the next
 reservation are tappable; set `guestView: false` to turn this off.
 
-The view shows the guest's name and avatar and, below them:
+The view shows the guest's avatar and name, with the rank by visits in front of the name (`#3 Anna`, among guests only
+for a guest, among all guests for family), then the guest's fun facts one at a time every `guestViewFactInterval`, and
+below them:
 
 - the number of visits since 2020 and a heatmap of visits per month (one row per year, colour from 0 to 4+ visits).
   Future months and months before the data starts (before September 2020) are dashed, and a dot marks a month with a
   planned visit. A visit counts in the month it starts, upcoming visits are not counted;
-- tiles with visits per year, most visits in one month, years with visits, nights at the cabin, nights in the
-  longest stay, visits this year and the rank (among guests only for a guest, among all guests for family);
-- the first and last visit, and the guest's fun facts from the backend, one at a time every `guestViewFactInterval`.
+- tiles with visits per year, most visits in one month, years with visits, days and nights at the cabin, nights in the
+  longest stay and visits this year;
+- the first and last visit.
 
 The profile is fetched once when the view opens (`GET /api/stats/guests/{guestId}`) and is not refreshed while it is
 open. The layout is drawn for a portrait 1440x2560 screen, and scales with the window.

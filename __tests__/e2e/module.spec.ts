@@ -184,7 +184,7 @@ test.describe('MMM-CabinStats', () => {
 
       const dialog = guestDialog(page, 'Anna Testesen')
       await expect(dialog).toBeVisible()
-      await expect(dialog.getByRole('heading', { level: 2, name: 'Anna Testesen' })).toBeVisible()
+      await expect(dialog.getByRole('heading', { level: 2, name: /Anna Testesen$/ })).toBeVisible()
       await expect(dialog.getByText('Hyttehistorikk · 2020–2026')).toBeVisible()
 
       await dialog.getByRole('button', { name: 'Lukk' }).click()
@@ -217,7 +217,7 @@ test.describe('MMM-CabinStats', () => {
       await expect(heatmap.getByRole('cell', { name: 'Des 2026: ikke kommet ennå' })).toBeVisible()
     })
 
-    test('shows the stat tiles, with the rank among all for family', async ({ page }) => {
+    test('shows the stat tiles, and the rank among all before the name for family', async ({ page }) => {
       await guestButton(occupiedMixed(page), 'Anna').click()
 
       const dialog = guestDialog(page, 'Anna Testesen')
@@ -225,7 +225,8 @@ test.describe('MMM-CabinStats', () => {
       await expect(tile(dialog, 'Flest på én måned')).toBeVisible()
       await expect(tile(dialog, 'År med besøk')).toContainText('7 av 7')
       await expect(tile(dialog, 'Netter på hytta')).toBeVisible()
-      await expect(tile(dialog, 'Rangering på besøk')).toContainText('#1')
+      await expect(tile(dialog, 'Dager på hytta')).toBeVisible()
+      await expect(dialog.getByRole('heading', { level: 2, name: '#1 Anna Testesen' })).toBeVisible()
       await expect(dialog.getByText('Første registrerte besøk sep. 2020')).toBeVisible()
     })
 
@@ -233,7 +234,7 @@ test.describe('MMM-CabinStats', () => {
       await guestButton(notOccupiedNext(page), 'Dora').click()
 
       const dialog = guestDialog(page, 'Dora Eksempel')
-      await expect(tile(dialog, 'Rangering blant gjestene')).toContainText('#9')
+      await expect(dialog.getByRole('heading', { level: 2, name: '#9 Dora Eksempel' })).toBeVisible()
       await expect(tile(dialog, 'År med besøk')).toContainText('av 7')
     })
 

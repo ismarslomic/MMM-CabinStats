@@ -44,8 +44,6 @@
   "TILE_NIGHTS": "Netter på hytta",
   "TILE_LONGESTSTAY": "Netter i lengste opphold",
   "TILE_VISITSTHISYEAR": "Besøk i år",
-  "TILE_RANK_GUESTS": "Rangering blant gjestene",
-  "TILE_RANK_ALL": "Rangering på besøk",
   "MONTH_SHORT_1": "Jan",
   "MONTH_SHORT_2": "Feb",
   "MONTH_SHORT_3": "Mar",
@@ -57,5 +55,6 @@
   "MONTH_SHORT_9": "Sep",
   "MONTH_SHORT_10": "Okt",
   "MONTH_SHORT_11": "Nov",
-  "MONTH_SHORT_12": "Des"
+  "MONTH_SHORT_12": "Des",
+  "TILE_DAYS": "Dager på hytta"
 }

@@ -1,6 +1,6 @@
 import { element, Translate } from './dom'
 import { GuestOverlayModel } from './guestView'
-import { createProfileSection, updateProfileFact } from './guestProfileView'
+import { createProfileFact, createProfileSection, updateProfileFact } from './guestProfileView'
 
 /** What the overlay reports back to the module. */
 export type GuestOverlayHandlers = {
@@ -38,7 +38,7 @@ function createBody(model: GuestOverlayModel, translate: Translate, handlers: Gu
     retry.addEventListener('click', handlers.onRetry)
     body.append(message, retry)
   } else {
-    if (model.profile) body.append(createProfileSection(model.profile, model.factIndex, translate))
+    if (model.profile) body.append(createProfileSection(model.profile, translate))
   }
   return body
 }
@@ -64,7 +64,16 @@ export function createGuestOverlay(
   close.addEventListener('click', handlers.onClose)
 
   const header = element('header', 'cabin-overlay-header')
-  header.append(createAvatar(model), element('h2', 'cabin-overlay-name bright', model.fullName))
+  const name = element('h2', 'cabin-overlay-name bright')
+  if (model.profile?.rank) {
+    const rank = element('span', 'cabin-overlay-rank', model.profile.rank.value)
+    if (model.profile.rank.accent) rank.classList.add('cabin-overlay-rank-first')
+    name.append(rank, ' ')
+  }
+  name.append(model.fullName)
+  header.append(createAvatar(model), name)
+  const fact = model.profile && createProfileFact(model.profile, model.factIndex)
+  if (fact) header.append(fact)
 
   overlay.append(close, header, createBody(model, translate, handlers))
   return overlay

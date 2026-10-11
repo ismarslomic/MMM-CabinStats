@@ -37,21 +37,22 @@ export type HeatmapRow = { year: number; cells: HeatmapCell[] }
 
 /** A number in the stat tiles. `of` is set for "5 av 7" style values. */
 export type ProfileTile = {
-  id: 'visitsPerYear' | 'maxPerMonth' | 'yearsWithVisits' | 'nights' | 'longestStay' | 'visitsThisYear' | 'rank'
+  id: 'visitsPerYear' | 'maxPerMonth' | 'yearsWithVisits' | 'days' | 'nights' | 'longestStay' | 'visitsThisYear'
   /** Ready to display. */
   value: string
   /** The total in "{value} av {of}". */
   of?: number
-  /** Gold, used for rank 1. */
-  accent?: boolean
-  /** Rank among guests only (`guests`) or among all guests including family (`all`), only set for the rank tile. */
-  rankAmong?: 'guests' | 'all'
 }
+
+/** The rank shown before the name, e.g. `#3`. Gold for rank 1. */
+export type ProfileRank = { value: string; accent: boolean }
 
 /** Everything the profile part of the guest view renders. */
 export type ProfileModel = {
   firstYear: number
   lastYear: number
+  /** Rank by visits among guests only for a guest, among all guests for family. `null` without visits. */
+  rank: ProfileRank | null
   /** Visits of the guest that have started, all time. */
   totalVisits: number
   /** Number of years in the heatmap, as in "the last 7 years". */
@@ -144,6 +145,7 @@ function primaryTiles(profile: GuestProfileStats, heatmap: HeatmapRow[], yearsIn
 function secondaryTiles(profile: GuestProfileStats): ProfileTile[] {
   const { guest, visits } = profile
   const tiles: ProfileTile[] = []
+  if (guest.allTime.totalDays > 0) tiles.push({ id: 'days', value: String(guest.allTime.totalDays) })
   if (guest.allTime.totalNights > 0) tiles.push({ id: 'nights', value: String(guest.allTime.totalNights) })
 
   const longestStay = Math.max(0, ...visits.filter((visit) => visit.status !== 'UPCOMING').map((visit) => visit.nights))
@@ -153,11 +155,13 @@ function secondaryTiles(profile: GuestProfileStats): ProfileTile[] {
     tiles.push({ id: 'visitsThisYear', value: String(guest.currentYear.totalVisits) })
   }
 
-  const rank = guest.isFamily ? guest.allTime.visitsRank : guest.allTime.visitsRankAmongGuests
-  if (rank !== null && rank !== undefined) {
-    tiles.push({ id: 'rank', value: `#${rank}`, accent: rank === 1, rankAmong: guest.isFamily ? 'all' : 'guests' })
-  }
   return tiles
+}
+
+function rankOf(profile: GuestProfileStats): ProfileRank | null {
+  const { guest } = profile
+  const rank = guest.isFamily ? guest.allTime.visitsRank : guest.allTime.visitsRankAmongGuests
+  return rank === null || rank === undefined ? null : { value: `#${rank}`, accent: rank === 1 }
 }
 
 /** Builds what the profile part of the guest view renders from the backend profile and the current month. */
@@ -168,6 +172,7 @@ export function buildProfileModel(profile: GuestProfileStats, today: YearMonth):
   return {
     firstYear: heatmapStartYear,
     lastYear: heatmapStartYear + yearsInGrid - 1,
+    rank: rankOf(profile),
     totalVisits: profile.guest.allTime.totalVisits,
     yearsInGrid,
     heatmap,

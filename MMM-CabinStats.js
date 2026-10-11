@@ -545,6 +545,8 @@
     function secondaryTiles(profile) {
         const { guest, visits } = profile;
         const tiles = [];
+        if (guest.allTime.totalDays > 0)
+            tiles.push({ id: 'days', value: String(guest.allTime.totalDays) });
         if (guest.allTime.totalNights > 0)
             tiles.push({ id: 'nights', value: String(guest.allTime.totalNights) });
         const longestStay = Math.max(0, ...visits.filter((visit) => visit.status !== 'UPCOMING').map((visit) => visit.nights));
@@ -553,11 +555,12 @@
         if (guest.currentYear.totalVisits > 0) {
             tiles.push({ id: 'visitsThisYear', value: String(guest.currentYear.totalVisits) });
         }
-        const rank = guest.isFamily ? guest.allTime.visitsRank : guest.allTime.visitsRankAmongGuests;
-        if (rank !== null && rank !== undefined) {
-            tiles.push({ id: 'rank', value: `#${rank}`, accent: rank === 1, rankAmong: guest.isFamily ? 'all' : 'guests' });
-        }
         return tiles;
+    }
+    function rankOf(profile) {
+        const { guest } = profile;
+        const rank = guest.isFamily ? guest.allTime.visitsRank : guest.allTime.visitsRankAmongGuests;
+        return rank === null || rank === undefined ? null : { value: `#${rank}`, accent: rank === 1 };
     }
     /** Builds what the profile part of the guest view renders from the backend profile and the current month. */
     function buildProfileModel(profile, today) {
@@ -567,6 +570,7 @@
         return {
             firstYear: heatmapStartYear,
             lastYear: heatmapStartYear + yearsInGrid - 1,
+            rank: rankOf(profile),
             totalVisits: profile.guest.allTime.totalVisits,
             yearsInGrid,
             heatmap,
@@ -669,14 +673,10 @@
         return legend;
     }
     function tileLabelKey(tile) {
-        if (tile.id === 'rank')
-            return tile.rankAmong === 'all' ? 'TILE_RANK_ALL' : 'TILE_RANK_GUESTS';
         return `TILE_${tile.id.toUpperCase()}`;
     }
     function createTile(tile, translate) {
         const item = element('li', 'cabin-tile');
-        if (tile.accent)
-            item.classList.add('cabin-tile-accent');
         const value = tile.of === undefined ? tile.value : translate('TILE_OF', { count: tile.value, total: tile.of });
         item.append(element('span', 'cabin-tile-value', value), element('span', 'cabin-tile-label', translate(tileLabelKey(tile))));
         return item;
@@ -696,10 +696,16 @@
         return parts.length > 0 ? element('p', 'cabin-profile-dates dimmed', parts.join(' · ')) : undefined;
     }
     /**
-     * The profile of a guest: headline number, visit heatmap, stat tiles and one fun fact. `factIndex` selects the fact
-     * shown first; later changes go through {@link updateProfileFact} so the rest stays untouched.
+     * The fun fact shown under the name of the guest, `undefined` without facts. `factIndex` selects the fact shown
+     * first; later changes go through {@link updateProfileFact} so the rest stays untouched.
      */
-    function createProfileSection(profile, factIndex, translate) {
+    function createProfileFact(profile, factIndex) {
+        if (profile.facts.length === 0)
+            return undefined;
+        return element('p', 'cabin-profile-fact bright', profile.facts[factIndex] ?? profile.facts[0]);
+    }
+    /** The profile of a guest: headline number, visit heatmap, stat tiles and the first and last visit. */
+    function createProfileSection(profile, translate) {
         const section = element('div', 'cabin-profile');
         section.append(element('p', 'cabin-profile-subtitle dimmed', translate('PROFILE_SUBTITLE', { first: profile.firstYear, last: profile.lastYear })));
         const total = element('p', 'cabin-profile-total');
@@ -716,10 +722,6 @@
         ]) {
             if (node)
                 section.append(node);
-        }
-        if (profile.facts.length > 0) {
-            const fact = element('p', 'cabin-profile-fact bright', profile.facts[factIndex] ?? profile.facts[0]);
-            section.append(fact);
         }
         return section;
     }
@@ -763,7 +765,7 @@
         }
         else {
             if (model.profile)
-                body.append(createProfileSection(model.profile, model.factIndex, translate));
+                body.append(createProfileSection(model.profile, translate));
         }
         return body;
     }
@@ -782,7 +784,18 @@
         close.setAttribute('aria-label', translate('CLOSE'));
         close.addEventListener('click', handlers.onClose);
         const header = element('header', 'cabin-overlay-header');
-        header.append(createAvatar(model), element('h2', 'cabin-overlay-name bright', model.fullName));
+        const name = element('h2', 'cabin-overlay-name bright');
+        if (model.profile?.rank) {
+            const rank = element('span', 'cabin-overlay-rank', model.profile.rank.value);
+            if (model.profile.rank.accent)
+                rank.classList.add('cabin-overlay-rank-first');
+            name.append(rank, ' ');
+        }
+        name.append(model.fullName);
+        header.append(createAvatar(model), name);
+        const fact = model.profile && createProfileFact(model.profile, model.factIndex);
+        if (fact)
+            header.append(fact);
         overlay.append(close, header, createBody(model, translate, handlers));
         return overlay;
     }
