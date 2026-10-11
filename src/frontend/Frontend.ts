@@ -12,7 +12,7 @@ import {
 } from '../types/Messages'
 import { buildViewModel } from './viewModel'
 import { TemplateData, toTemplateData } from './display'
-import { clampIndex, interleaveGuestFacts, nextIndex } from './rotation'
+import { clampIndex, nextIndex, rotatingGuestFacts } from './rotation'
 import { buildGuestOverlayModel, findGuest } from './guestView'
 import { createGuestOverlay } from './guestOverlay'
 
@@ -94,7 +94,7 @@ const frontendModule: Omit<
       }
       Log.debug(`${this.name} received live stats fetched at ${payload.fetchedAt}`)
       const previous = this.state
-      const guestFacts = interleaveGuestFacts(payload.liveStats.guestFunFacts)
+      const guestFacts = rotatingGuestFacts(payload.liveStats, resolveConfig(this.config).showNextVisit)
       this.state = {
         liveStats: payload.liveStats,
         fetchedAt: payload.fetchedAt,
@@ -197,19 +197,13 @@ const frontendModule: Omit<
 
   rotateGuestFact(): void {
     const state = this.state
-    const liveStats = state?.liveStats
-    // Guest facts are only shown for an ongoing reservation, and not at all by a `stats` instance.
-    if (
-      resolveConfig(this.config).display === 'stats' ||
-      !state ||
-      !liveStats?.isOccupied ||
-      !liveStats.currentReservation
-    )
-      return
-    const length = interleaveGuestFacts(liveStats.guestFunFacts).length
+    const config = resolveConfig(this.config)
+    // A `stats` instance shows no facts.
+    if (!state?.liveStats || config.display === 'stats') return
+    const length = rotatingGuestFacts(state.liveStats, config.showNextVisit).length
     if (length <= 1) return
     state.guestFactIndex = nextIndex(state.guestFactIndex, length)
-    this.updateDom(resolveConfig(this.config).animationSpeed)
+    this.updateDom(config.animationSpeed)
   },
 
   rotateCabinFact(): void {

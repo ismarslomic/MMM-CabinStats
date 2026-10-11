@@ -18,7 +18,7 @@
 - **Occupied**: heading, stay dates and nights left, round guest avatars with first name and "besøk nr. X", a gold
   badge for the top visitor, a highlighted ring and label for first-time guests, one rotating guest fun fact, the
   next visit (dimmed, small avatars) and a rotating cabin fact.
-- **Not occupied**: "Neste besøk om N dager" with dates, small avatars and a fun fact, the all-time totals (visits,
+- **Not occupied**: "Neste besøk om N dager" with dates, small avatars and a rotating guest fun fact, the all-time totals (visits,
   nights, guests) and a rotating cabin fact. Without a next reservation only the totals and cabin facts show.
 - **Missing or invalid `apiBaseUrl`**: a short config error. Nothing is fetched.
 - **Backend unreachable**: the last good data stays on screen; nothing shows if data was never loaded. Errors are

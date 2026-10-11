@@ -116,16 +116,15 @@ describe('buildViewModel', () => {
     test('is compact when flagged occupied but the reservation is missing', () => {
       const model = build({ ...occupiedMixed, currentReservation: null })
       expect(model.view).toBe('compact')
-      expect(model.guestFact).toBeNull()
+      expect(model.guestFact).toBe('Neste besøk er om 14 dager.')
     })
   })
 
   describe('next visit', () => {
-    test('maps the upcoming reservation with guests and the first fact', () => {
+    test('maps the upcoming reservation with guests', () => {
       const { nextVisit } = build(occupiedMixed)
       expect(nextVisit).toMatchObject({ startDate: '2026-11-20', endDate: '2026-11-23', daysUntil: 14 })
       expect(nextVisit?.guests.map((g) => g.guestId)).toEqual(['guest-1', 'guest-4'])
-      expect(nextVisit?.fact).toBe('Neste besøk er om 14 dager.')
     })
 
     test('is hidden when showNextVisit is off', () => {
@@ -136,8 +135,8 @@ describe('buildViewModel', () => {
       expect(build(notOccupiedNoNext).nextVisit).toBeNull()
     })
 
-    test('has no fact when the list is empty', () => {
-      expect(build({ ...notOccupiedNext, nextVisitFunFacts: [] }).nextVisit?.fact).toBeNull()
+    test('has no guest fact when the list is empty and the cabin is not occupied', () => {
+      expect(build({ ...notOccupiedNext, nextVisitFunFacts: [] }).guestFact).toBeNull()
     })
   })
 
@@ -147,9 +146,27 @@ describe('buildViewModel', () => {
       expect(model.view).toBe('compact')
       expect(model.stay).toBeNull()
       expect(model.guests).toEqual([])
-      expect(model.guestFact).toBeNull()
+      expect(model.guestFact).toBe('Dora kommer tilbake etter 8 måneder.')
       expect(model.nextVisit?.daysUntil).toBe(14)
       expect(model.totals).toEqual({ visits: 120, nights: 300, uniqueGuests: 25 })
+    })
+
+    test('rotates the next visit facts like the guest facts when occupied', () => {
+      const nextVisitFunFacts = [
+        { guestId: 'guest-4', text: 'a1', priority: 2 },
+        { guestId: 'guest-4', text: 'a2', priority: 1 },
+        { guestId: null, text: 'g1', priority: 1 },
+      ]
+      const stats = { ...notOccupiedNext, nextVisitFunFacts }
+      expect(build(stats, { guestFactIndex: 0 }).guestFact).toBe('a1')
+      expect(build(stats, { guestFactIndex: 1 }).guestFact).toBe('g1')
+      expect(build(stats, { guestFactIndex: 2 }).guestFact).toBe('a2')
+      expect(build(stats, { guestFactIndex: 99 }).guestFact).toBe('a2')
+    })
+
+    test('has no guest fact when showNextVisit is off', () => {
+      const model = build(notOccupiedNext, { config: { ...config, showNextVisit: false } })
+      expect(model.guestFact).toBeNull()
     })
 
     test('shows only totals without a next reservation and without cabin facts', () => {

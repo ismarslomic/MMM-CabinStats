@@ -38,6 +38,20 @@
 </li>
 {% endmacro %}
 
+{# Fun fact about the guests, shown the same way in the occupied and compact views. #}
+{% macro guestFactLine(text) %}
+{% if text %}
+<p class="cabin-fact cabin-fact-guest medium light bright">{{ text }}</p>
+{% endif %}
+{% endmacro %}
+
+{# Fun fact about the cabin, shown the same way in the occupied and compact views. #}
+{% macro cabinFactLine(text) %}
+{% if text %}
+<p class="cabin-fact cabin-fact-cabin small light dimmed">{{ text }}</p>
+{% endif %}
+{% endmacro %}
+
 
 {# ============================================================
    Views
@@ -83,9 +97,7 @@
     {% for guest in guests %}{{ avatar(guest, 'large', guestView) }}{% endfor %}
   </ul>
 
-  {% if guestFact %}
-  <p class="cabin-fact cabin-fact-guest medium light bright">{{ guestFact }}</p>
-  {% endif %}
+  {{ guestFactLine(guestFact) }}
 
   {# Upcoming visit #}
   {% if nextVisit %}
@@ -97,9 +109,7 @@
   </section>
   {% endif %}
 
-  {% if cabinFact %}
-  <p class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</p>
-  {% endif %}
+  {{ cabinFactLine(cabinFact) }}
 </section>
 
 
@@ -125,9 +135,7 @@
     {% for guest in nextVisit.guests %}{{ avatar(guest, 'small', guestView) }}{% endfor %}
   </ul>
 
-  {% if nextVisit.fact %}
-  <p class="cabin-fact cabin-fact-guest medium light bright">{{ nextVisit.fact }}</p>
-  {% endif %}
+  {{ guestFactLine(guestFact) }}
   {% endif %}
 
   {# All-time totals #}
@@ -139,8 +147,6 @@
   </ul>
   {% endif %}
 
-  {% if cabinFact %}
-  <p class="cabin-fact cabin-fact-cabin small light dimmed">{{ cabinFact }}</p>
-  {% endif %}
+  {{ cabinFactLine(cabinFact) }}
 </section>
 {% endif %}

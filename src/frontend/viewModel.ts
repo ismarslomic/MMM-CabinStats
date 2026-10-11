@@ -1,7 +1,7 @@
 import { Config, Display, normaliseApiBaseUrl } from '../types/Config'
 import { LiveGuestStats, LiveStats } from '../types/LiveStats'
 import { initials } from './initials'
-import { clampIndex, interleaveGuestFacts } from './rotation'
+import { clampIndex, rotatingGuestFacts } from './rotation'
 
 /**
  * Which view the template renders:
@@ -39,8 +39,6 @@ export type NextVisitView = {
   endDate: string
   daysUntil: number
   guests: GuestView[]
-  /** Highest priority fact about the next visit, `null` when there is none. */
-  fact: string | null
 }
 
 /** Everything the template renders, derived from the stats and the rotation state. Pure data, no formatting. */
@@ -52,7 +50,7 @@ export type ViewModel = {
   guestView: boolean
   stay: StayView | null
   guests: GuestView[]
-  /** Current guest fact in the rotation, `null` when there is none. Only set for the `occupied` view. */
+  /** Current guest fact in the rotation, `null` when there is none. About the current guests, or the next visit's guests when not occupied. */
   guestFact: string | null
   /** Current cabin fact in the rotation, `null` when there is none or `showCabinFacts` is off. */
   cabinFact: string | null
@@ -111,7 +109,7 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
 
   const current = liveStats.isOccupied ? liveStats.currentReservation : null
   const next = config.showNextVisit ? liveStats.nextReservation : null
-  const guestFacts = current && display !== 'stats' ? interleaveGuestFacts(liveStats.guestFunFacts) : []
+  const guestFacts = display !== 'stats' ? rotatingGuestFacts(liveStats, config.showNextVisit) : []
   const cabinFacts = config.showCabinFacts && display !== 'stats' ? liveStats.cabinFunFacts : []
 
   return {
@@ -130,7 +128,6 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
           endDate: next.endDate,
           daysUntil: next.daysUntil,
           guests: next.guests.map((guest) => toGuestView(guest, apiBaseUrl)),
-          fact: liveStats.nextVisitFunFacts[0]?.text ?? null,
         }
       : null,
     totals: {

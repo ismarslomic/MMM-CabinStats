@@ -272,6 +272,17 @@
         }
         return result;
     }
+    /**
+     * The guest facts that rotate right now: about the current guests while the cabin is occupied, otherwise about the next
+     * visit (only when it is shown). Same order rules in both cases, see `interleaveGuestFacts`.
+     */
+    function rotatingGuestFacts(liveStats, showNextVisit) {
+        if (liveStats.isOccupied && liveStats.currentReservation)
+            return interleaveGuestFacts(liveStats.guestFunFacts);
+        if (showNextVisit && liveStats.nextReservation)
+            return interleaveGuestFacts(liveStats.nextVisitFunFacts);
+        return [];
+    }
     /** Index of the next fact, wrapping around. `0` for an empty list. */
     function nextIndex(index, length) {
         return length > 0 ? (index + 1) % length : 0;
@@ -320,7 +331,7 @@
             return emptyViewModel('empty', display, animationSpeed);
         const current = liveStats.isOccupied ? liveStats.currentReservation : null;
         const next = config.showNextVisit ? liveStats.nextReservation : null;
-        const guestFacts = current && display !== 'stats' ? interleaveGuestFacts(liveStats.guestFunFacts) : [];
+        const guestFacts = display !== 'stats' ? rotatingGuestFacts(liveStats, config.showNextVisit) : [];
         const cabinFacts = config.showCabinFacts && display !== 'stats' ? liveStats.cabinFunFacts : [];
         return {
             view: current ? 'occupied' : 'compact',
@@ -338,7 +349,6 @@
                     endDate: next.endDate,
                     daysUntil: next.daysUntil,
                     guests: next.guests.map((guest) => toGuestView(guest, apiBaseUrl)),
-                    fact: liveStats.nextVisitFunFacts[0]?.text ?? null,
                 }
                 : null,
             totals: {
@@ -559,7 +569,7 @@
                 }
                 Log__namespace.debug(`${this.name} received live stats fetched at ${payload.fetchedAt}`);
                 const previous = this.state;
-                const guestFacts = interleaveGuestFacts(payload.liveStats.guestFunFacts);
+                const guestFacts = rotatingGuestFacts(payload.liveStats, resolveConfig(this.config).showNextVisit);
                 this.state = {
                     liveStats: payload.liveStats,
                     fetchedAt: payload.fetchedAt,
@@ -659,18 +669,15 @@
         },
         rotateGuestFact() {
             const state = this.state;
-            const liveStats = state?.liveStats;
-            // Guest facts are only shown for an ongoing reservation, and not at all by a `stats` instance.
-            if (resolveConfig(this.config).display === 'stats' ||
-                !state ||
-                !liveStats?.isOccupied ||
-                !liveStats.currentReservation)
+            const config = resolveConfig(this.config);
+            // A `stats` instance shows no facts.
+            if (!state?.liveStats || config.display === 'stats')
                 return;
-            const length = interleaveGuestFacts(liveStats.guestFunFacts).length;
+            const length = rotatingGuestFacts(state.liveStats, config.showNextVisit).length;
             if (length <= 1)
                 return;
             state.guestFactIndex = nextIndex(state.guestFactIndex, length);
-            this.updateDom(resolveConfig(this.config).animationSpeed);
+            this.updateDom(config.animationSpeed);
         },
         rotateCabinFact() {
             const state = this.state;
