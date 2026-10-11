@@ -4,8 +4,9 @@ import { defaultConfig } from '../../src/types/Config'
 import { MM2ModuleHelper } from './mocks/module'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
 import notOccupiedNext from '../fixtures/not-occupied-next.json'
+import guestProfile from '../fixtures/guest-profile-regular.json'
 
-vi.mock('../../src/frontend/guestOverlay', () => ({ createGuestOverlay: vi.fn() }))
+vi.mock('../../src/frontend/guestOverlay', () => ({ createGuestOverlay: vi.fn(), updateGuestOverlayFact: vi.fn() }))
 
 const mockModuleRegister = vi.fn()
 const moduleMock: MM2ModuleHelper = { register: mockModuleRegister }
@@ -40,6 +41,7 @@ describe('Frontend', () => {
       display: 'full',
       guestView: true,
       guestViewTimeout: 60_000,
+      guestViewFactInterval: 7_000,
       showNextVisit: true,
       showCabinFacts: true,
       pauseWhenHidden: false,
@@ -349,9 +351,15 @@ describe('Frontend', () => {
 
   describe('guest view', () => {
     type OverlayHandlers = { onClose: () => void; onRetry: () => void; onActivity: () => void }
-    type OverlayModel = { guestId: string; status: string; fullName: string }
+    type OverlayModel = {
+      guestId: string
+      status: string
+      fullName: string
+      profile?: { totalVisits: number; facts: string[] }
+    }
 
     let createGuestOverlay: ReturnType<typeof vi.fn>
+    let updateGuestOverlayFact: ReturnType<typeof vi.fn>
     let overlays: { remove: ReturnType<typeof vi.fn>; replaceWith: ReturnType<typeof vi.fn> }[]
     const documentMock = { body: { append: vi.fn() }, addEventListener: vi.fn(), removeEventListener: vi.fn() }
 
@@ -366,13 +374,19 @@ describe('Frontend', () => {
       return implementation
     }
 
-    const guestResponse = (guestId = 'guest-1', identifier = 'module_1') => ({ identifier, guestId, guestStats: {} })
+    const guestResponse = (guestId = 'guest-1', identifier = 'module_1') => ({
+      identifier,
+      guestId,
+      profile: guestProfile,
+    })
 
     beforeEach(async () => {
       overlays = []
-      ;({ createGuestOverlay } = (await import('../../src/frontend/guestOverlay')) as unknown as {
-        createGuestOverlay: ReturnType<typeof vi.fn>
-      })
+      ;({ createGuestOverlay, updateGuestOverlayFact } =
+        (await import('../../src/frontend/guestOverlay')) as unknown as {
+          createGuestOverlay: ReturnType<typeof vi.fn>
+          updateGuestOverlayFact: ReturnType<typeof vi.fn>
+        })
       createGuestOverlay.mockImplementation(() => {
         const overlay = {
           remove: vi.fn(),
@@ -391,13 +405,13 @@ describe('Frontend', () => {
       vi.unstubAllGlobals()
     })
 
-    it('opens the view and requests the guest stats once', () => {
+    it('opens the view and requests the guest profile once', () => {
       const module = loaded()
       module.openGuestView('guest-1')
 
       expect(lastModel()).toMatchObject({ guestId: 'guest-1', fullName: 'Anna Testesen', status: 'loading' })
       expect(documentMock.body.append).toHaveBeenCalledWith(overlays[0])
-      expect(sendSocketNotificationMock).toHaveBeenCalledExactlyOnceWith('GUEST_STATS_REQUEST', {
+      expect(sendSocketNotificationMock).toHaveBeenCalledExactlyOnceWith('GUEST_PROFILE_REQUEST', {
         identifier: 'module_1',
         guestId: 'guest-1',
         config: module.config,
@@ -425,17 +439,83 @@ describe('Frontend', () => {
     it('renders the stats and never polls while the view is open', () => {
       const module = loaded()
       module.openGuestView('guest-1')
-      module.socketNotificationReceived('GUEST_STATS_RESPONSE', guestResponse())
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
 
       expect(lastModel().status).toBe('loaded')
       expect(overlays[0].replaceWith).toHaveBeenCalledWith(overlays[1])
       expect(sendSocketNotificationMock).toHaveBeenCalledTimes(1)
     })
 
+    it('builds the profile model when the profile arrives', () => {
+      const module = loaded()
+      module.openGuestView('guest-1')
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
+      expect(lastModel().profile).toMatchObject({ totalVisits: 125, facts: guestProfile.funFacts.map((f) => f.text) })
+    })
+
+    describe('fun fact rotation', () => {
+      const open = (configOverrides: Record<string, unknown> = {}) => {
+        const module = loaded({ guestViewFactInterval: 5_000, ...configOverrides })
+        module.openGuestView('guest-1')
+        module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
+        return module
+      }
+      const facts = guestProfile.funFacts.map((fact) => fact.text)
+
+      it('shows the next fact on every interval without re-rendering the view', () => {
+        open()
+        createGuestOverlay.mockClear()
+
+        vi.advanceTimersByTime(5_000)
+        expect(updateGuestOverlayFact).toHaveBeenLastCalledWith(overlays[1], facts[1])
+        vi.advanceTimersByTime(5_000)
+        expect(updateGuestOverlayFact).toHaveBeenLastCalledWith(overlays[1], facts[2])
+        expect(createGuestOverlay).not.toHaveBeenCalled()
+      })
+
+      it('wraps around after the last fact', () => {
+        open()
+        vi.advanceTimersByTime(5_000 * facts.length)
+        expect(updateGuestOverlayFact).toHaveBeenLastCalledWith(overlays[1], facts[0])
+      })
+
+      it('does not rotate while loading or on error, and stops on retry, close and hide', () => {
+        const module = loaded({ guestViewFactInterval: 5_000 })
+        module.openGuestView('guest-1')
+        vi.advanceTimersByTime(20_000)
+        module.socketNotificationReceived('GUEST_PROFILE_ERROR', {
+          identifier: 'module_1',
+          guestId: 'guest-1',
+          message: 'x',
+        })
+        vi.advanceTimersByTime(20_000)
+        expect(updateGuestOverlayFact).not.toHaveBeenCalled()
+
+        module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
+        lastHandlers().onRetry()
+        vi.advanceTimersByTime(20_000)
+        expect(updateGuestOverlayFact).not.toHaveBeenCalled()
+
+        module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
+        module.closeGuestView()
+        vi.advanceTimersByTime(20_000)
+        expect(updateGuestOverlayFact).not.toHaveBeenCalled()
+      })
+
+      it('does not start a timer for at most one fact', () => {
+        const module = loaded({ guestViewFactInterval: 5_000 })
+        module.openGuestView('guest-1')
+        const single = { ...guestProfile, funFacts: guestProfile.funFacts.slice(0, 1) }
+        const timersBefore = vi.getTimerCount()
+        module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', { ...guestResponse(), profile: single })
+        expect(vi.getTimerCount()).toBe(timersBefore)
+      })
+    })
+
     it('shows an error, logs it and retries with a new request', async () => {
       const module = loaded()
       module.openGuestView('guest-1')
-      module.socketNotificationReceived('GUEST_STATS_ERROR', {
+      module.socketNotificationReceived('GUEST_PROFILE_ERROR', {
         identifier: 'module_1',
         guestId: 'guest-1',
         message: 'boom',
@@ -455,20 +535,20 @@ describe('Frontend', () => {
       module.openGuestView('guest-1')
       createGuestOverlay.mockClear()
 
-      module.socketNotificationReceived('GUEST_STATS_RESPONSE', guestResponse('guest-1', 'module_2'))
-      module.socketNotificationReceived('GUEST_STATS_RESPONSE', guestResponse('guest-2'))
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse('guest-1', 'module_2'))
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse('guest-2'))
       expect(createGuestOverlay).not.toHaveBeenCalled()
 
       module.closeGuestView()
-      module.socketNotificationReceived('GUEST_STATS_RESPONSE', guestResponse())
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
       expect(createGuestOverlay).not.toHaveBeenCalled()
     })
 
-    it('logs malformed guest stats messages', async () => {
+    it('logs malformed guest profile messages', async () => {
       const module = loaded()
       const Log = await import('logger')
-      module.socketNotificationReceived('GUEST_STATS_RESPONSE', { identifier: 'module_1' })
-      module.socketNotificationReceived('GUEST_STATS_ERROR', {})
+      module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', { identifier: 'module_1' })
+      module.socketNotificationReceived('GUEST_PROFILE_ERROR', {})
       expect(Log.error).toHaveBeenCalledTimes(2)
     })
 

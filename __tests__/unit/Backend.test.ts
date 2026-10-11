@@ -5,6 +5,7 @@ import { NodeHelperModule } from 'node_helper'
 import * as Log from 'logger'
 import { SocketNotification } from '../../src/constants/SocketNotifications'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
+import guestProfile from '../fixtures/guest-profile-regular.json'
 
 const config = { apiBaseUrl: 'http://backend.example:8080/', requestTimeout: 5000 }
 
@@ -126,33 +127,13 @@ describe('Backend', () => {
     })
   })
 
-  describe('mock guest stats', () => {
-    test('replies with an empty object without calling the backend', async () => {
-      expect(helper.useMockGuestStats).toBe(true)
-      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
-        identifier: 'module_1',
-        guestId: 'guest-1',
-        config,
-      })
-      await flush()
-
-      expect(fetchMock).not.toHaveBeenCalled()
-      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_RESPONSE, {
-        identifier: 'module_1',
-        guestId: 'guest-1',
-        guestStats: {},
-      })
-    })
-  })
-
-  describe('guest stats', () => {
+  describe('guest profile', () => {
     beforeEach(() => {
-      helper.useMockGuestStats = false
-      fetchMock.mockResolvedValue(jsonResponse({}))
+      fetchMock.mockResolvedValue(jsonResponse(guestProfile))
     })
 
-    test('replies with the guest stats, the requesting identifier and the guestId', async () => {
-      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+    test('replies with the guest profile, the requesting identifier and the guestId', async () => {
+      helper.socketNotificationReceived(SocketNotification.GUEST_PROFILE_REQUEST, {
         identifier: 'module_1',
         guestId: 'guest 1',
         config,
@@ -161,17 +142,17 @@ describe('Backend', () => {
 
       expect(fetchMock).toHaveBeenCalledOnce()
       expect(fetchMock.mock.calls[0][0]).toBe('http://backend.example:8080/api/stats/guests/guest%201')
-      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_RESPONSE, {
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_PROFILE_RESPONSE, {
         identifier: 'module_1',
         guestId: 'guest 1',
-        guestStats: {},
+        profile: guestProfile,
       })
     })
 
     test.each([null, {}, { identifier: 'module_1', config }, { identifier: 'module_1', guestId: 'guest-1' }])(
       'ignores malformed requests: %p',
       async (payload) => {
-        helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, payload)
+        helper.socketNotificationReceived(SocketNotification.GUEST_PROFILE_REQUEST, payload)
         await flush()
         expect(fetchMock).not.toHaveBeenCalled()
         expect(mockedSendSocketNotification).not.toHaveBeenCalled()
@@ -180,7 +161,7 @@ describe('Backend', () => {
     )
 
     test('replies with an error and never fetches without a valid apiBaseUrl', async () => {
-      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+      helper.socketNotificationReceived(SocketNotification.GUEST_PROFILE_REQUEST, {
         identifier: 'module_1',
         guestId: 'guest-1',
         config: {},
@@ -188,7 +169,7 @@ describe('Backend', () => {
       await flush()
 
       expect(fetchMock).not.toHaveBeenCalled()
-      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_ERROR, {
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_PROFILE_ERROR, {
         identifier: 'module_1',
         guestId: 'guest-1',
         message: expect.stringContaining('apiBaseUrl'),
@@ -202,14 +183,14 @@ describe('Backend', () => {
     ])('replies with an error when %s', async (_name, arrange, expectedMessage) => {
       arrange()
 
-      helper.socketNotificationReceived(SocketNotification.GUEST_STATS_REQUEST, {
+      helper.socketNotificationReceived(SocketNotification.GUEST_PROFILE_REQUEST, {
         identifier: 'module_1',
         guestId: 'guest-1',
         config,
       })
       await flush()
 
-      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_STATS_ERROR, {
+      expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_PROFILE_ERROR, {
         identifier: 'module_1',
         guestId: 'guest-1',
         message: expect.stringContaining(expectedMessage),

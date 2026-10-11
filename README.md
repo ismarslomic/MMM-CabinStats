@@ -62,20 +62,21 @@ var config = {
 
 ### Options
 
-| Option              | Default  | Behavior                                                                                 |
-| ------------------- | -------- | ---------------------------------------------------------------------------------------- |
-| `apiBaseUrl`        | none     | **Required.** Base url of the backend, `http` or `https`. A trailing slash is tolerated. |
-| `updateInterval`    | `600000` | Milliseconds between requests (the data changes slowly).                                 |
-| `requestTimeout`    | `10000`  | Milliseconds before a backend request is aborted.                                        |
-| `guestFactInterval` | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
-| `cabinFactInterval` | `45000`  | Milliseconds between cabin fun facts (30–60 s works well).                               |
-| `display`           | `full`   | `full`, `stats` (no guest or cabin facts) or `facts` (only those facts). See below.      |
-| `guestView`         | `true`   | Tapping a guest avatar opens a full-screen view for that guest. See below.               |
-| `guestViewTimeout`  | `60000`  | Milliseconds without touch before the guest view closes by itself.                       |
-| `showNextVisit`     | `true`   | Show the upcoming reservation.                                                           |
-| `showCabinFacts`    | `true`   | Show the cabin fun facts.                                                                |
-| `pauseWhenHidden`   | `false`  | Stop polling and rotation in `suspend()` and fetch fresh data immediately in `resume()`. |
-| `animationSpeed`    | `1000`   | Milliseconds of the fade when the content changes.                                       |
+| Option                  | Default  | Behavior                                                                                 |
+| ----------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `apiBaseUrl`            | none     | **Required.** Base url of the backend, `http` or `https`. A trailing slash is tolerated. |
+| `updateInterval`        | `600000` | Milliseconds between requests (the data changes slowly).                                 |
+| `requestTimeout`        | `10000`  | Milliseconds before a backend request is aborted.                                        |
+| `guestFactInterval`     | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
+| `cabinFactInterval`     | `45000`  | Milliseconds between cabin fun facts (30–60 s works well).                               |
+| `display`               | `full`   | `full`, `stats` (no guest or cabin facts) or `facts` (only those facts). See below.      |
+| `guestView`             | `true`   | Tapping a guest avatar opens a full-screen view for that guest. See below.               |
+| `guestViewTimeout`      | `60000`  | Milliseconds without touch before the guest view closes by itself.                       |
+| `guestViewFactInterval` | `7000`   | Milliseconds between the fun facts in the guest view (6–8 s works well).                 |
+| `showNextVisit`         | `true`   | Show the upcoming reservation.                                                           |
+| `showCabinFacts`        | `true`   | Show the cabin fun facts.                                                                |
+| `pauseWhenHidden`       | `false`  | Stop polling and rotation in `suspend()` and fetch fresh data immediately in `resume()`. |
+| `animationSpeed`        | `1000`   | Milliseconds of the fade when the content changes.                                       |
 
 To show the facts at another position than the rest, add the module twice, with the same `apiBaseUrl`:
 
@@ -101,10 +102,20 @@ Each instance polls the backend and rotates the facts on its own.
 ### Guest view
 
 On a touch screen, tapping a guest avatar opens a full-screen view that covers all other modules, with a close button
-(✕). It also closes with Escape, and after `guestViewTimeout` without touch. The stats of the guest are fetched once
-when the view opens (`GET /api/stats/guests/{guestId}`) and are not refreshed while it is open. Avatars of the ongoing
-and the next reservation are tappable; set `guestView: false` to turn this off. The view currently shows a
-placeholder, because the backend endpoint returns an empty object for now.
+(✕). It also closes with Escape, and after `guestViewTimeout` without touch. Avatars of the ongoing and the next
+reservation are tappable; set `guestView: false` to turn this off.
+
+The view shows the guest's name and avatar and, below them:
+
+- the number of visits since 2020 and a heatmap of visits per month (one row per year, colour from 0 to 4+ visits).
+  Future months and months before the data starts (before September 2020) are dashed, and a dot marks a month with a
+  planned visit. A visit counts in the month it starts, upcoming visits are not counted;
+- tiles with visits per year, most visits in one month, years with visits, nights at the cabin, nights in the
+  longest stay, visits this year and the rank (among guests only for a guest, among all guests for family);
+- the first and last visit, and the guest's fun facts from the backend, one at a time every `guestViewFactInterval`.
+
+The profile is fetched once when the view opens (`GET /api/stats/guests/{guestId}`) and is not refreshed while it is
+open. The layout is drawn for a portrait 1440x2560 screen, and scales with the window.
 
 Invalid values fall back to the defaults, except `apiBaseUrl`, which has no default. Repeated start or resume calls
 never create duplicate timers. There are no API keys: the backend has no authentication.
@@ -127,8 +138,9 @@ The module calls `GET {apiBaseUrl}/api/stats` and expects the live stats object:
 Dates are `YYYY-MM-DD` strings. Each guest has `guestId`, `firstName`, `lastName`, `avatarUrl` (nullable, fetched with
 `GET {apiBaseUrl}{avatarUrl}`), `isFirstVisit` and `allTime.totalVisits` / `allTime.visitsRank`.
 
-When a guest avatar is tapped, the module also calls `GET {apiBaseUrl}/api/stats/guests/{guestId}` once. The response is
-an empty object for now.
+When a guest avatar is tapped, the module also calls `GET {apiBaseUrl}/api/stats/guests/{guestId}` once and expects a
+guest profile: `guest` (the same guest object as in the live stats, with `allTime` and `currentYear` stats and ranks),
+`visits` (`startDate`, `endDate`, `days`, `nights` and `status` of every visit) and `funFacts` (`text`, `priority`).
 
 The full contract is the OpenAPI spec [`openapi/cabin-visits.json`](openapi/cabin-visits.json). The TypeScript types in
 `src/types/api.generated.ts` are generated from it, and `src/types/LiveStats.ts` adds a runtime guard that rejects

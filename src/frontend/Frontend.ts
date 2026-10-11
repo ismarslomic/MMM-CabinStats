@@ -3,9 +3,9 @@ import * as Log from 'logger'
 import { defaultConfig, hasApiBaseUrl, resolveConfig } from '../types/Config'
 import { SocketNotification } from '../constants/SocketNotifications'
 import {
-  GuestStatsRequest,
-  isGuestStatsError,
-  isGuestStatsResponse,
+  GuestProfileRequest,
+  isGuestProfileError,
+  isGuestProfileResponse,
   isLiveStatsError,
   isLiveStatsResponse,
   LiveStatsRequest,
@@ -14,7 +14,9 @@ import { buildViewModel } from './viewModel'
 import { TemplateData, toTemplateData } from './display'
 import { clampIndex, nextIndex, rotatingGuestFacts } from './rotation'
 import { buildGuestOverlayModel, findGuest } from './guestView'
-import { createGuestOverlay } from './guestOverlay'
+import { createGuestOverlay, updateGuestOverlayFact } from './guestOverlay'
+import { yearMonthOf } from './guestProfile'
+import { GuestProfileStats } from '../types/GuestProfileStats'
 
 const frontendModule: Omit<
   FrontendModule,
@@ -113,21 +115,21 @@ const frontendModule: Omit<
       }
       // Keep showing the last good data; the helper has already logged the details.
       Log.error(`${this.name} could not load live stats: ${payload.message}`)
-    } else if (notificationIdentifier === SocketNotification.GUEST_STATS_RESPONSE) {
-      if (!isGuestStatsResponse(payload)) {
-        Log.error(`${this.name} received an invalid guest stats response`)
+    } else if (notificationIdentifier === SocketNotification.GUEST_PROFILE_RESPONSE) {
+      if (!isGuestProfileResponse(payload)) {
+        Log.error(`${this.name} received an invalid guest profile response`)
         return
       }
-      this.finishGuestStats(payload.identifier, payload.guestId, 'loaded')
-    } else if (notificationIdentifier === SocketNotification.GUEST_STATS_ERROR) {
-      if (!isGuestStatsError(payload)) {
-        Log.error(`${this.name} received an invalid guest stats error`)
+      this.finishGuestProfile(payload.identifier, payload.guestId, 'loaded', payload.profile)
+    } else if (notificationIdentifier === SocketNotification.GUEST_PROFILE_ERROR) {
+      if (!isGuestProfileError(payload)) {
+        Log.error(`${this.name} received an invalid guest profile error`)
         return
       }
       if (payload.identifier === this.identifier) {
-        Log.error(`${this.name} could not load guest stats: ${payload.message}`)
+        Log.error(`${this.name} could not load guest profile: ${payload.message}`)
       }
-      this.finishGuestStats(payload.identifier, payload.guestId, 'error')
+      this.finishGuestProfile(payload.identifier, payload.guestId, 'error')
     } else {
       Log.error(`${this.name} received unknown socket notification: '${notificationIdentifier}'`)
     }
@@ -221,19 +223,20 @@ const frontendModule: Omit<
     const guest = findGuest(this.state?.liveStats, guestId)
     if (!this.state || !config.guestView || !hasApiBaseUrl(config) || !guest) return
 
-    this.state.guestView = { guest, status: 'loading' }
+    this.state.guestView = { guest, status: 'loading', factIndex: 0 }
     this.documentKeyHandler ??= (event: KeyboardEvent) => {
       if (event.key === 'Escape') this.closeGuestView()
     }
     document.addEventListener('keydown', this.documentKeyHandler)
     this.renderGuestView()
     this.startGuestViewTimeout()
-    this.requestGuestStats(guestId)
+    this.requestGuestProfile(guestId)
   },
 
   closeGuestView(): void {
     clearTimeout(this.guestViewTimer)
     this.guestViewTimer = undefined
+    this.stopGuestViewFactRotation()
     if (this.documentKeyHandler) {
       document.removeEventListener('keydown', this.documentKeyHandler)
       this.documentKeyHandler = undefined
@@ -247,14 +250,17 @@ const frontendModule: Omit<
     const guestView = this.state?.guestView
     if (!guestView) return
     const overlay = createGuestOverlay(
-      buildGuestOverlayModel(guestView.guest, resolveConfig(this.config).apiBaseUrl, guestView.status),
+      buildGuestOverlayModel(guestView, resolveConfig(this.config).apiBaseUrl, yearMonthOf(new Date())),
       (key, variables) => this.translate(key, variables),
       {
         onClose: () => this.closeGuestView(),
         onRetry: () => {
+          this.stopGuestViewFactRotation()
           guestView.status = 'loading'
+          guestView.profile = undefined
+          guestView.factIndex = 0
           this.renderGuestView()
-          this.requestGuestStats(guestView.guest.guestId)
+          this.requestGuestProfile(guestView.guest.guestId)
         },
         onActivity: () => this.startGuestViewTimeout(),
       }
@@ -275,18 +281,47 @@ const frontendModule: Omit<
     }, resolveConfig(this.config).guestViewTimeout)
   },
 
-  requestGuestStats(guestId: string): void {
-    const request: GuestStatsRequest = { identifier: this.identifier, guestId, config: this.config }
-    this.sendSocketNotification(SocketNotification.GUEST_STATS_REQUEST, request)
+  requestGuestProfile(guestId: string): void {
+    const request: GuestProfileRequest = { identifier: this.identifier, guestId, config: this.config }
+    this.sendSocketNotification(SocketNotification.GUEST_PROFILE_REQUEST, request)
   },
 
-  finishGuestStats(identifier: string, guestId: string, status: 'loaded' | 'error'): void {
+  finishGuestProfile(
+    identifier: string,
+    guestId: string,
+    status: 'loaded' | 'error',
+    profile?: GuestProfileStats
+  ): void {
     // The helper broadcasts to every instance of this module type. A reply for a view that was closed or switched
     // to another guest in the meantime is stale.
     const guestView = this.state?.guestView
     if (identifier !== this.identifier || guestView?.guest.guestId !== guestId || guestView.status !== 'loading') return
     guestView.status = status
+    guestView.profile = profile
+    guestView.factIndex = 0
     this.renderGuestView()
+    if (status === 'loaded') this.startGuestViewFactRotation()
+  },
+
+  startGuestViewFactRotation(): void {
+    this.stopGuestViewFactRotation()
+    if ((this.state?.guestView?.profile?.funFacts.length ?? 0) <= 1) return
+    this.guestViewFactTimer = setInterval(() => {
+      this.rotateGuestViewFact()
+    }, resolveConfig(this.config).guestViewFactInterval)
+  },
+
+  stopGuestViewFactRotation(): void {
+    clearInterval(this.guestViewFactTimer)
+    this.guestViewFactTimer = undefined
+  },
+
+  rotateGuestViewFact(): void {
+    const guestView = this.state?.guestView
+    const facts = guestView?.profile?.funFacts
+    if (!guestView || !facts || facts.length <= 1 || !this.guestOverlay) return
+    guestView.factIndex = nextIndex(guestView.factIndex, facts.length)
+    updateGuestOverlayFact(this.guestOverlay, facts[guestView.factIndex].text)
   },
 
   loadData(): void {

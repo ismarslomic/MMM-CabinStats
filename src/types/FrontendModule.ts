@@ -3,6 +3,7 @@ import { Config } from './Config'
 import { LiveStats } from './LiveStats'
 import { TemplateData } from '../frontend/display'
 import { GuestViewState } from '../frontend/guestView'
+import { GuestProfileStats } from './GuestProfileStats'
 
 /** What the frontend remembers between renders. */
 export type FrontendState = {
@@ -126,6 +127,12 @@ export interface FrontendModule {
    * Handle of the timer that closes the guest view after `config.guestViewTimeout` ms without touch.
    */
   guestViewTimer?: ReturnType<typeof setTimeout>
+
+  /**
+   * @custom
+   * Handle of the interval timer that rotates the fun facts in the guest view. `undefined` when not running.
+   */
+  guestViewFactTimer?: ReturnType<typeof setInterval>
 
   /**
    * @custom
@@ -258,7 +265,7 @@ export interface FrontendModule {
 
   /**
    * @custom
-   * Opens the full-screen guest view for a guest of the ongoing or next reservation and requests the guest stats
+   * Opens the full-screen guest view for a guest of the ongoing or next reservation and requests the guest profile
    * once from the node helper. Does nothing when `config.guestView` is off or the guest is unknown.
    */
   openGuestView(guestId: string): void
@@ -285,12 +292,31 @@ export interface FrontendModule {
    * @custom
    * Asks the node helper for the stats of the guest of the open view.
    */
-  requestGuestStats(guestId: string): void
+  requestGuestProfile(guestId: string): void
 
   /**
    * @custom
-   * Applies a guest stats reply to the open guest view and re-renders it. Replies for other instances, closed views
-   * or another guest are ignored.
+   * Applies a guest profile reply to the open guest view and re-renders it, and starts the fun fact rotation when
+   * loaded. Replies for other instances, closed views or another guest are ignored.
    */
-  finishGuestStats(identifier: string, guestId: string, status: 'loaded' | 'error'): void
+  finishGuestProfile(identifier: string, guestId: string, status: 'loaded' | 'error', profile?: GuestProfileStats): void
+
+  /**
+   * @custom
+   * Starts the timer that rotates the fun facts in the guest view every `config.guestViewFactInterval` ms. Does
+   * nothing when the profile has at most one fact.
+   */
+  startGuestViewFactRotation(): void
+
+  /**
+   * @custom
+   * Stops the fun fact rotation of the guest view. Safe to call when it is not running.
+   */
+  stopGuestViewFactRotation(): void
+
+  /**
+   * @custom
+   * Shows the next fun fact in the guest view without re-rendering the rest of the view.
+   */
+  rotateGuestViewFact(): void
 }

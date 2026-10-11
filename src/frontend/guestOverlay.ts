@@ -1,7 +1,6 @@
+import { element, Translate } from './dom'
 import { GuestOverlayModel } from './guestView'
-
-/** Translates a key of `translations/nb.json`, with optional `{name}` style variables. */
-export type Translate = (key: string, variables?: Record<string, string | number>) => string
+import { createProfileSection, updateProfileFact } from './guestProfileView'
 
 /** What the overlay reports back to the module. */
 export type GuestOverlayHandlers = {
@@ -11,17 +10,6 @@ export type GuestOverlayHandlers = {
   onRetry: () => void
   /** Any touch inside the overlay, so the module can restart the inactivity timeout. */
   onActivity: () => void
-}
-
-function element<K extends keyof HTMLElementTagNameMap>(
-  tag: K,
-  className: string,
-  text?: string
-): HTMLElementTagNameMap[K] {
-  const node = document.createElement(tag)
-  node.className = className
-  if (text !== undefined) node.textContent = text
-  return node
 }
 
 function createAvatar(model: GuestOverlayModel): HTMLElement {
@@ -39,19 +27,18 @@ function createAvatar(model: GuestOverlayModel): HTMLElement {
 function createBody(model: GuestOverlayModel, translate: Translate, handlers: GuestOverlayHandlers): HTMLElement {
   const body = element('div', 'cabin-overlay-body')
   if (model.status === 'loading') {
-    const status = element('p', 'cabin-overlay-status medium light dimmed', translate('GUEST_STATS_LOADING'))
+    const status = element('p', 'cabin-overlay-status dimmed', translate('GUEST_PROFILE_LOADING'))
     status.setAttribute('role', 'status')
     body.append(status)
   } else if (model.status === 'error') {
-    const message = element('p', 'cabin-overlay-status medium light bright', translate('GUEST_STATS_ERROR'))
+    const message = element('p', 'cabin-overlay-status bright', translate('GUEST_PROFILE_ERROR'))
     message.setAttribute('role', 'alert')
-    const retry = element('button', 'cabin-overlay-button medium', translate('GUEST_STATS_RETRY'))
+    const retry = element('button', 'cabin-overlay-button', translate('GUEST_PROFILE_RETRY'))
     retry.type = 'button'
     retry.addEventListener('click', handlers.onRetry)
     body.append(message, retry)
   } else {
-    // Next iteration: the statistics of the guest go here.
-    body.append(element('p', 'cabin-overlay-status medium light dimmed', translate('GUEST_STATS_PLACEHOLDER')))
+    if (model.profile) body.append(createProfileSection(model.profile, model.factIndex, translate))
   }
   return body
 }
@@ -68,7 +55,7 @@ export function createGuestOverlay(
   const overlay = element('div', 'cabin-overlay')
   overlay.setAttribute('role', 'dialog')
   overlay.setAttribute('aria-modal', 'true')
-  overlay.setAttribute('aria-label', translate('GUEST_STATS_LABEL', { name: model.fullName }))
+  overlay.setAttribute('aria-label', translate('GUEST_PROFILE_LABEL', { name: model.fullName }))
   overlay.addEventListener('pointerdown', handlers.onActivity)
 
   const close = element('button', 'cabin-overlay-close', '✕')
@@ -77,8 +64,13 @@ export function createGuestOverlay(
   close.addEventListener('click', handlers.onClose)
 
   const header = element('header', 'cabin-overlay-header')
-  header.append(createAvatar(model), element('h2', 'cabin-overlay-name large light bright', model.fullName))
+  header.append(createAvatar(model), element('h2', 'cabin-overlay-name bright', model.fullName))
 
   overlay.append(close, header, createBody(model, translate, handlers))
   return overlay
+}
+
+/** Shows another fun fact in an open guest view. */
+export function updateGuestOverlayFact(overlay: HTMLElement, text: string): void {
+  updateProfileFact(overlay, text)
 }

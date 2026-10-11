@@ -18,14 +18,20 @@
         "currentYear": {
           "totalVisits": 3,
           "totalDays": 9,
+          "totalNights": 6,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": 2,
+          "daysRankAmongGuests": 2
         },
         "allTime": {
           "totalVisits": 14,
           "totalDays": 52,
+          "totalNights": 38,
           "visitsRank": 1,
-          "daysRank": 1
+          "daysRank": 1,
+          "visitsRankAmongGuests": 1,
+          "daysRankAmongGuests": 1
         }
       }
     ],

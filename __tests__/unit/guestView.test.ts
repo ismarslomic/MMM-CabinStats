@@ -1,6 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import { buildGuestOverlayModel, findGuest } from '../../src/frontend/guestView'
-import { LiveStats } from '../../src/types/LiveStats'
+import { buildGuestOverlayModel, findGuest, GuestViewState } from '../../src/frontend/guestView'
+import { GuestProfileStats } from '../../src/types/GuestProfileStats'
+import { GuestStats, LiveStats } from '../../src/types/LiveStats'
+import regular from '../fixtures/guest-profile-regular.json'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
 import notOccupiedNext from '../fixtures/not-occupied-next.json'
 import guestWithoutAvatar from '../fixtures/guest-without-avatar.json'
@@ -25,20 +27,41 @@ describe('findGuest', () => {
 })
 
 describe('buildGuestOverlayModel', () => {
+  const today = { year: 2026, month: 10 }
+  const state = (guest: GuestStats, status: GuestViewState['status'], extra: Partial<GuestViewState> = {}) => ({
+    guest,
+    status,
+    factIndex: 0,
+    ...extra,
+  })
+
   test('builds the full name, initials and absolute avatar url', () => {
     const guest = findGuest(occupiedMixed as LiveStats, 'guest-1')!
-    expect(buildGuestOverlayModel(guest, apiBaseUrl, 'loading')).toEqual({
+    expect(buildGuestOverlayModel(state(guest, 'loading'), apiBaseUrl, today)).toEqual({
       guestId: 'guest-1',
       fullName: 'Anna Testesen',
       firstName: 'Anna',
       initials: 'AT',
       avatarUrl: `${apiBaseUrl}/api/guests/guest-1/avatar`,
       status: 'loading',
+      profile: undefined,
+      factIndex: 0,
     })
   })
 
   test('has no avatar url for a guest without avatar', () => {
     const guest = (guestWithoutAvatar as LiveStats).currentReservation!.guests.find((g) => g.firstName === 'Eva')!
-    expect(buildGuestOverlayModel(guest, apiBaseUrl, 'loaded').avatarUrl).toBeNull()
+    expect(buildGuestOverlayModel(state(guest, 'loaded'), apiBaseUrl, today).avatarUrl).toBeNull()
+  })
+
+  test('builds the profile only when loaded', () => {
+    const guest = findGuest(occupiedMixed as LiveStats, 'guest-1')!
+    const profile = regular as unknown as GuestProfileStats
+    expect(buildGuestOverlayModel(state(guest, 'loaded', { profile }), apiBaseUrl, today).profile?.totalVisits).toBe(
+      125
+    )
+    expect(buildGuestOverlayModel(state(guest, 'loading', { profile }), apiBaseUrl, today).profile).toBeUndefined()
+    expect(buildGuestOverlayModel(state(guest, 'error'), apiBaseUrl, today).profile).toBeUndefined()
+    expect(buildGuestOverlayModel(state(guest, 'loaded'), apiBaseUrl, today).profile).toBeUndefined()
   })
 })

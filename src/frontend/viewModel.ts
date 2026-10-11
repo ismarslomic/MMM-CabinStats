@@ -1,5 +1,5 @@
 import { Config, Display, normaliseApiBaseUrl } from '../types/Config'
-import { LiveGuestStats, LiveStats } from '../types/LiveStats'
+import { GuestStats, LiveStats } from '../types/LiveStats'
 import { initials } from './initials'
 import { clampIndex, rotatingGuestFacts } from './rotation'
 
@@ -88,7 +88,7 @@ export function avatarUrlFor(apiBaseUrl: string | undefined, avatarUrl: string |
   return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
 }
 
-function toGuestView(guest: LiveGuestStats, apiBaseUrl: string | undefined): GuestView {
+function toGuestView(guest: GuestStats, apiBaseUrl: string | undefined): GuestView {
   return {
     guestId: guest.guestId,
     firstName: guest.firstName,

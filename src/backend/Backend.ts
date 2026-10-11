@@ -6,23 +6,17 @@ import * as Log from 'logger'
 import { SocketNotification } from '../constants/SocketNotifications'
 import { hasApiBaseUrl, resolveConfig } from '../types/Config'
 import {
-  GuestStatsError,
-  GuestStatsResponse,
+  GuestProfileError,
+  GuestProfileResponse,
   LiveStatsError,
   LiveStatsResponse,
-  isGuestStatsRequest,
+  isGuestProfileRequest,
   isLiveStatsRequest,
 } from '../types/Messages'
-import { fetchGuestStats } from './fetchGuestStats'
+import { fetchGuestProfile } from './fetchGuestProfile'
 import { fetchLiveStats } from './fetchLiveStats'
 
 export default NodeHelper.create({
-  /**
-   * TEMPORARY: reply to guest stats requests with an empty object without calling the backend, until
-   * `GET /api/stats/guests/{guestId}` is implemented there. Set to `false` to fetch for real.
-   */
-  useMockGuestStats: true,
-
   start(): void {
     Log.debug(`${this.name} is started!`)
   },
@@ -38,12 +32,12 @@ export default NodeHelper.create({
         return
       }
       void this.loadLiveStats(request.identifier, request.config)
-    } else if (notification === SocketNotification.GUEST_STATS_REQUEST) {
-      if (!isGuestStatsRequest(request)) {
-        Log.error(`${this.name} received an invalid guest stats request`)
+    } else if (notification === SocketNotification.GUEST_PROFILE_REQUEST) {
+      if (!isGuestProfileRequest(request)) {
+        Log.error(`${this.name} received an invalid guest profile request`)
         return
       }
-      void this.loadGuestStats(request.identifier, request.guestId, request.config)
+      void this.loadGuestProfile(request.identifier, request.guestId, request.config)
     } else {
       Log.error(`${this.name} received unknown socket notification: '${notification}'`)
     }
@@ -64,18 +58,18 @@ export default NodeHelper.create({
     }
   },
 
-  async loadGuestStats(identifier: string, guestId: string, rawConfig: unknown): Promise<void> {
+  async loadGuestProfile(identifier: string, guestId: string, rawConfig: unknown): Promise<void> {
     const config = resolveConfig(rawConfig)
     if (!hasApiBaseUrl(config)) {
-      this.sendGuestStatsError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url')
+      this.sendGuestProfileError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url')
       return
     }
     try {
-      const guestStats = this.useMockGuestStats ? {} : await fetchGuestStats(guestId, config)
-      const payload: GuestStatsResponse = { identifier, guestId, guestStats }
-      this.sendSocketNotification(SocketNotification.GUEST_STATS_RESPONSE, payload)
+      const profile = await fetchGuestProfile(guestId, config)
+      const payload: GuestProfileResponse = { identifier, guestId, profile }
+      this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload)
     } catch (error) {
-      this.sendGuestStatsError(identifier, guestId, error instanceof Error ? error.message : String(error))
+      this.sendGuestProfileError(identifier, guestId, error instanceof Error ? error.message : String(error))
     }
   },
 
@@ -85,9 +79,9 @@ export default NodeHelper.create({
     this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload)
   },
 
-  sendGuestStatsError(identifier: string, guestId: string, message: string): void {
-    Log.error(`${this.name} could not load guest stats: ${message}`)
-    const payload: GuestStatsError = { identifier, guestId, message }
-    this.sendSocketNotification(SocketNotification.GUEST_STATS_ERROR, payload)
+  sendGuestProfileError(identifier: string, guestId: string, message: string): void {
+    Log.error(`${this.name} could not load guest profile: ${message}`)
+    const payload: GuestProfileError = { identifier, guestId, message }
+    this.sendSocketNotification(SocketNotification.GUEST_PROFILE_ERROR, payload)
   },
 })

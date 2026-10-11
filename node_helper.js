@@ -39,9 +39,9 @@ var SocketNotification;
     SocketNotification["LIVE_STATS_REQUEST"] = "LIVE_STATS_REQUEST";
     SocketNotification["LIVE_STATS_RESPONSE"] = "LIVE_STATS_RESPONSE";
     SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
-    SocketNotification["GUEST_STATS_REQUEST"] = "GUEST_STATS_REQUEST";
-    SocketNotification["GUEST_STATS_RESPONSE"] = "GUEST_STATS_RESPONSE";
-    SocketNotification["GUEST_STATS_ERROR"] = "GUEST_STATS_ERROR";
+    SocketNotification["GUEST_PROFILE_REQUEST"] = "GUEST_PROFILE_REQUEST";
+    SocketNotification["GUEST_PROFILE_RESPONSE"] = "GUEST_PROFILE_RESPONSE";
+    SocketNotification["GUEST_PROFILE_ERROR"] = "GUEST_PROFILE_ERROR";
 })(SocketNotification || (SocketNotification = {}));
 
 const displays = ['full', 'stats', 'facts'];
@@ -56,6 +56,7 @@ const defaultConfig = {
     display: 'full',
     guestView: true,
     guestViewTimeout: 60_000,
+    guestViewFactInterval: 7_000,
     showNextVisit: true,
     showCabinFacts: true,
     pauseWhenHidden: false,
@@ -106,6 +107,7 @@ function resolveConfig(raw) {
         display: oneOf(config.display, displays, defaultConfig.display),
         guestView: boolean(config.guestView, defaultConfig.guestView),
         guestViewTimeout: positiveTimerDelay(config.guestViewTimeout, defaultConfig.guestViewTimeout),
+        guestViewFactInterval: positiveTimerDelay(config.guestViewFactInterval, defaultConfig.guestViewFactInterval),
         showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
         showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
         pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),
@@ -115,11 +117,6 @@ function resolveConfig(raw) {
 /** Type guard for a config that has a usable `apiBaseUrl`. */
 function hasApiBaseUrl(config) {
     return config.apiBaseUrl !== undefined;
-}
-
-/** Type guard for {@link GuestDetailStats}: any JSON object, because the contract has no properties yet. */
-function isGuestDetailStats(value) {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -146,14 +143,19 @@ function isOptional(value, isValid) {
 function isArrayOf(value, isValid) {
     return Array.isArray(value) && value.every(isValid);
 }
+
 function isGuestPeriodStats(value) {
     return (isRecord$1(value) &&
         isNumber(value.totalVisits) &&
         isNumber(value.totalDays) &&
+        isNumber(value.totalNights) &&
         isOptional(value.visitsRank, isNumber) &&
-        isOptional(value.daysRank, isNumber));
+        isOptional(value.daysRank, isNumber) &&
+        isOptional(value.visitsRankAmongGuests, isNumber) &&
+        isOptional(value.daysRankAmongGuests, isNumber));
 }
-function isLiveGuestStats(value) {
+/** Type guard for {@link GuestStats}. */
+function isGuestStats(value) {
     return (isRecord$1(value) &&
         isString(value.guestId) &&
         isString(value.firstName) &&
@@ -172,16 +174,17 @@ function isCurrentReservation(value) {
     return (isRecord$1(value) &&
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
-        isArrayOf(value.guests, isLiveGuestStats) &&
+        isArrayOf(value.guests, isGuestStats) &&
         isNumber(value.remainingNights));
 }
 function isNextReservation(value) {
     return (isRecord$1(value) &&
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
-        isArrayOf(value.guests, isLiveGuestStats) &&
+        isArrayOf(value.guests, isGuestStats) &&
         isNumber(value.daysUntil));
 }
+/** Type guard for {@link FunFact}. */
 function isFunFact(value) {
     return isRecord$1(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority);
 }
@@ -202,6 +205,27 @@ function isLiveStats(payload) {
         isArrayOf(payload.nextVisitFunFacts, isFunFact));
 }
 
+const visitStatuses = ['COMPLETED', 'ONGOING', 'UPCOMING'];
+function isGuestVisit(value) {
+    return (isRecord$1(value) &&
+        isIsoDate(value.startDate) &&
+        isIsoDate(value.endDate) &&
+        isNumber(value.days) &&
+        isNumber(value.nights) &&
+        isString(value.status) &&
+        visitStatuses.some((status) => status === value.status));
+}
+/**
+ * Type guard for {@link GuestProfileStats}. The payload crosses a runtime boundary (backend response), so every
+ * field the module reads is checked.
+ */
+function isGuestProfileStats(value) {
+    return (isRecord$1(value) &&
+        isGuestStats(value.guest) &&
+        isArrayOf(value.visits, isGuestVisit) &&
+        isArrayOf(value.funFacts, isFunFact));
+}
+
 function isRecord(value) {
     return typeof value === 'object' && value !== null;
 }
@@ -212,8 +236,8 @@ function isRecord(value) {
 function isLiveStatsRequest(payload) {
     return isRecord(payload) && typeof payload.identifier === 'string' && isRecord(payload.config);
 }
-/** Type guard for {@link GuestStatsRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
-function isGuestStatsRequest(payload) {
+/** Type guard for {@link GuestProfileRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
+function isGuestProfileRequest(payload) {
     return (isLiveStatsRequest(payload) && 'guestId' in payload && typeof payload.guestId === 'string' && payload.guestId !== '');
 }
 
@@ -253,11 +277,11 @@ async function fetchJson(url, { requestTimeout }, fetchFn = fetch) {
  * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
  * that does not match the contract.
  */
-async function fetchGuestStats(guestId, { apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+async function fetchGuestProfile(guestId, { apiBaseUrl, requestTimeout }, fetchFn = fetch) {
     const url = `${apiBaseUrl}/api/stats/guests/${encodeURIComponent(guestId)}`;
     const body = await fetchJson(url, { requestTimeout }, fetchFn);
-    if (!isGuestDetailStats(body)) {
-        throw new Error(`Response from ${url} does not match the expected guest stats contract`);
+    if (!isGuestProfileStats(body)) {
+        throw new Error(`Response from ${url} does not match the expected guest profile contract`);
     }
     return body;
 }
@@ -280,11 +304,6 @@ async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
 // noinspection JSVoidFunctionReturnValueUsed,JSUnusedGlobalSymbols
 // Default import preserves static methods on MagicMirror's CommonJS NodeHelper class.
 var Backend = NodeHelper.create({
-    /**
-     * TEMPORARY: reply to guest stats requests with an empty object without calling the backend, until
-     * `GET /api/stats/guests/{guestId}` is implemented there. Set to `false` to fetch for real.
-     */
-    useMockGuestStats: true,
     start() {
         Log__namespace.debug(`${this.name} is started!`);
     },
@@ -299,12 +318,12 @@ var Backend = NodeHelper.create({
             }
             void this.loadLiveStats(request.identifier, request.config);
         }
-        else if (notification === SocketNotification.GUEST_STATS_REQUEST) {
-            if (!isGuestStatsRequest(request)) {
-                Log__namespace.error(`${this.name} received an invalid guest stats request`);
+        else if (notification === SocketNotification.GUEST_PROFILE_REQUEST) {
+            if (!isGuestProfileRequest(request)) {
+                Log__namespace.error(`${this.name} received an invalid guest profile request`);
                 return;
             }
-            void this.loadGuestStats(request.identifier, request.guestId, request.config);
+            void this.loadGuestProfile(request.identifier, request.guestId, request.config);
         }
         else {
             Log__namespace.error(`${this.name} received unknown socket notification: '${notification}'`);
@@ -325,19 +344,19 @@ var Backend = NodeHelper.create({
             this.sendError(identifier, error instanceof Error ? error.message : String(error));
         }
     },
-    async loadGuestStats(identifier, guestId, rawConfig) {
+    async loadGuestProfile(identifier, guestId, rawConfig) {
         const config = resolveConfig(rawConfig);
         if (!hasApiBaseUrl(config)) {
-            this.sendGuestStatsError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url');
+            this.sendGuestProfileError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url');
             return;
         }
         try {
-            const guestStats = this.useMockGuestStats ? {} : await fetchGuestStats(guestId, config);
-            const payload = { identifier, guestId, guestStats };
-            this.sendSocketNotification(SocketNotification.GUEST_STATS_RESPONSE, payload);
+            const profile = await fetchGuestProfile(guestId, config);
+            const payload = { identifier, guestId, profile };
+            this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload);
         }
         catch (error) {
-            this.sendGuestStatsError(identifier, guestId, error instanceof Error ? error.message : String(error));
+            this.sendGuestProfileError(identifier, guestId, error instanceof Error ? error.message : String(error));
         }
     },
     sendError(identifier, message) {
@@ -345,10 +364,10 @@ var Backend = NodeHelper.create({
         const payload = { identifier, message };
         this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload);
     },
-    sendGuestStatsError(identifier, guestId, message) {
-        Log__namespace.error(`${this.name} could not load guest stats: ${message}`);
+    sendGuestProfileError(identifier, guestId, message) {
+        Log__namespace.error(`${this.name} could not load guest profile: ${message}`);
         const payload = { identifier, guestId, message };
-        this.sendSocketNotification(SocketNotification.GUEST_STATS_ERROR, payload);
+        this.sendSocketNotification(SocketNotification.GUEST_PROFILE_ERROR, payload);
     },
 });
 

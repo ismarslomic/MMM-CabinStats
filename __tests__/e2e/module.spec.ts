@@ -159,6 +159,14 @@ test.describe('MMM-CabinStats', () => {
   })
 
   test.describe('guest view', () => {
+    // The mirror is a portrait 1440x2560 screen, and the profile is drawn for it.
+    test.use({ viewport: { width: 1440, height: 2560 } })
+
+    test.beforeEach(async ({ page }) => {
+      // The heatmap marks the months after today, so the fixtures need a fixed day.
+      await page.clock.setFixedTime(new Date('2026-10-10T10:00:00'))
+    })
+
     function guestButton(view: Locator, name: string): Locator {
       return view.getByRole('button', { name: `Vis statistikk for ${name}` })
     }
@@ -167,13 +175,17 @@ test.describe('MMM-CabinStats', () => {
       return page.getByRole('dialog', { name: `Statistikk for ${name}` })
     }
 
+    function tile(dialog: Locator, label: string): Locator {
+      return dialog.getByRole('listitem').filter({ hasText: label })
+    }
+
     test('opens the guest view from an avatar and closes it with the close button', async ({ page }) => {
       await guestButton(occupiedMixed(page), 'Anna').click()
 
       const dialog = guestDialog(page, 'Anna Testesen')
       await expect(dialog).toBeVisible()
       await expect(dialog.getByRole('heading', { level: 2, name: 'Anna Testesen' })).toBeVisible()
-      await expect(dialog.getByText('Statistikk kommer snart')).toBeVisible()
+      await expect(dialog.getByText('Hyttehistorikk · 2020–2026')).toBeVisible()
 
       await dialog.getByRole('button', { name: 'Lukk' }).click()
       await expect(dialog).toHaveCount(0)
@@ -183,21 +195,75 @@ test.describe('MMM-CabinStats', () => {
       await guestButton(occupiedMixed(page), 'Anna').click()
 
       const dialog = guestDialog(page, 'Anna Testesen')
-      const viewport = page.viewportSize()!
       await expect(dialog).toHaveCSS('position', 'fixed')
-      expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: viewport.width, height: viewport.height })
+      expect(await dialog.boundingBox()).toEqual({ x: 0, y: 0, width: 1440, height: 2560 })
+      // Nothing may overflow, so the whole profile is visible without scrolling.
+      expect(await dialog.evaluate((node) => node.scrollHeight <= node.clientHeight)).toBe(true)
     })
 
-    test('opens from a guest of the next visit too', async ({ page }) => {
+    test('shows the headline and the visits per month as a heatmap', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      await expect(dialog.getByText('125', { exact: true })).toBeVisible()
+      await expect(dialog.getByText('hyttebesøk de siste 7 årene')).toBeVisible()
+
+      const heatmap = dialog.getByRole('table', { name: 'Besøk fordelt på måneder' })
+      await expect(heatmap.getByRole('rowheader')).toHaveText(['2020', '2021', '2022', '2023', '2024', '2025', '2026'])
+      await expect(heatmap.getByRole('columnheader')).toHaveCount(12)
+      await expect(heatmap.getByRole('cell', { name: 'Jan 2020: ingen data' })).toBeVisible()
+      await expect(heatmap.getByRole('cell', { name: 'Okt 2026: 1 besøk' })).toBeVisible()
+      await expect(heatmap.getByRole('cell', { name: 'Nov 2026: planlagt besøk' })).toBeVisible()
+      await expect(heatmap.getByRole('cell', { name: 'Des 2026: ikke kommet ennå' })).toBeVisible()
+    })
+
+    test('shows the stat tiles, with the rank among all for family', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      await expect(tile(dialog, 'Besøk per år')).toContainText('17,9')
+      await expect(tile(dialog, 'Flest på én måned')).toBeVisible()
+      await expect(tile(dialog, 'År med besøk')).toContainText('7 av 7')
+      await expect(tile(dialog, 'Netter på hytta')).toBeVisible()
+      await expect(tile(dialog, 'Rangering på besøk')).toContainText('#1')
+      await expect(dialog.getByText('Første registrerte besøk sep. 2020')).toBeVisible()
+    })
+
+    test('shows the rank among guests for a guest, from a guest of the next visit', async ({ page }) => {
       await guestButton(notOccupiedNext(page), 'Dora').click()
-      await expect(guestDialog(page, 'Dora Eksempel')).toBeVisible()
+
+      const dialog = guestDialog(page, 'Dora Eksempel')
+      await expect(tile(dialog, 'Rangering blant gjestene')).toContainText('#9')
+      await expect(tile(dialog, 'År med besøk')).toContainText('av 7')
+    })
+
+    test('rotates the fun facts', async ({ page }) => {
+      await guestButton(occupiedMixed(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      for (const fact of [
+        'Dette er besøk nr. 125 for Anna!',
+        'Neste besøk for Anna er om 41 dager',
+        'Anna har vært på hytta ca. 12 % av livet sitt',
+      ]) {
+        await expect(dialog.getByText(fact)).toBeVisible()
+      }
+    })
+
+    test('shows an empty profile without tiles or facts for a guest without visits', async ({ page }) => {
+      await guestButton(guestWithoutAvatar(page), 'Eva').click()
+
+      const dialog = guestDialog(page, 'Eva Eksempel')
+      await expect(dialog.locator('.cabin-profile-total-number')).toHaveText('0')
+      await expect(dialog.getByRole('list')).toHaveCount(0)
+      await expect(dialog.getByRole('table', { name: 'Besøk fordelt på måneder' })).toBeVisible()
     })
 
     test('closes with Escape', async ({ page }) => {
       await guestButton(occupiedMixed(page), 'Bjørn').click()
-      await expect(guestDialog(page, 'Bjørn Testesen')).toBeVisible()
+      await expect(page.getByRole('dialog')).toBeVisible()
       await page.keyboard.press('Escape')
-      await expect(guestDialog(page, 'Bjørn Testesen')).toHaveCount(0)
+      await expect(page.getByRole('dialog')).toHaveCount(0)
     })
 
     test('closes by itself after the inactivity timeout', async ({ page }) => {
@@ -207,15 +273,18 @@ test.describe('MMM-CabinStats', () => {
     })
 
     test('stays open while the live stats are refreshed', async ({ page }) => {
-      await guestButton(flaky(page), 'Bjørn').click()
-      const dialog = guestDialog(page, 'Bjørn Testesen')
+      await guestButton(flaky(page), 'Anna').click()
+      const dialog = guestDialog(page, 'Anna Testesen')
       await expect(dialog).toBeVisible()
       // The flaky instance polls every second; the view must not be rebuilt or closed by it.
       await page.waitForTimeout(2500)
       await expect(dialog).toBeVisible()
     })
 
-    test('shows an error with a retry button when the stats cannot be fetched', async ({ page, request }) => {
+    test('shows an error for an unknown guest and with a retry button when the backend is down', async ({
+      page,
+      request,
+    }) => {
       await expect(flaky(page)).toBeVisible()
       await request.post(`${mockBackend}/flaky/control/down`)
       await guestButton(flaky(page), 'Bjørn').click()
@@ -223,9 +292,23 @@ test.describe('MMM-CabinStats', () => {
       const dialog = guestDialog(page, 'Bjørn Testesen')
       await expect(dialog.getByRole('alert')).toHaveText('Kunne ikke hente statistikk')
 
+      // The mock backend has no profile for Bjørn either, so this stays an error after the backend is back.
       await request.post(`${mockBackend}/flaky/control/up`)
       await dialog.getByRole('button', { name: 'Prøv igjen' }).click()
-      await expect(dialog.getByText('Statistikk kommer snart')).toBeVisible()
+      await expect(dialog.getByRole('alert')).toHaveText('Kunne ikke hente statistikk')
+    })
+
+    test('loads the profile again after a failure', async ({ page, request }) => {
+      await expect(flaky(page)).toBeVisible()
+      await request.post(`${mockBackend}/flaky/control/down`)
+      await guestButton(flaky(page), 'Anna').click()
+
+      const dialog = guestDialog(page, 'Anna Testesen')
+      await expect(dialog.getByRole('alert')).toBeVisible()
+
+      await request.post(`${mockBackend}/flaky/control/up`)
+      await dialog.getByRole('button', { name: 'Prøv igjen' }).click()
+      await expect(dialog.getByText('hyttebesøk de siste 7 årene')).toBeVisible()
     })
   })
 })

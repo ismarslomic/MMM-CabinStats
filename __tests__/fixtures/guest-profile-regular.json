@@ -1,0 +1,943 @@
+{
+  "guest": {
+    "guestId": "guest-1",
+    "firstName": "Anna",
+    "lastName": "Testesen",
+    "age": 44,
+    "isFamily": true,
+    "avatarUrl": "/api/guests/guest-1/avatar",
+    "isFirstVisit": false,
+    "firstVisitDate": "2020-09-19",
+    "lastVisitDate": "2026-08-10",
+    "yearsVisited": [2026, 2025, 2024, 2023, 2022, 2021, 2020],
+    "currentYear": {
+      "totalVisits": 16,
+      "totalDays": 76,
+      "totalNights": 60,
+      "visitsRank": 2,
+      "daysRank": 2,
+      "visitsRankAmongGuests": null,
+      "daysRankAmongGuests": null
+    },
+    "allTime": {
+      "totalVisits": 125,
+      "totalDays": 544,
+      "totalNights": 419,
+      "visitsRank": 1,
+      "daysRank": 1,
+      "visitsRankAmongGuests": null,
+      "daysRankAmongGuests": null
+    }
+  },
+  "visits": [
+    {
+      "startDate": "2020-09-19",
+      "endDate": "2020-09-21",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2020-10-04",
+      "endDate": "2020-10-07",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2020-11-16",
+      "endDate": "2020-11-19",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2020-11-21",
+      "endDate": "2020-11-23",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2020-12-16",
+      "endDate": "2020-12-18",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-01-14",
+      "endDate": "2021-01-16",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-01-20",
+      "endDate": "2021-01-27",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-02-08",
+      "endDate": "2021-02-12",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-02-09",
+      "endDate": "2021-02-11",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-02-24",
+      "endDate": "2021-02-26",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-03-01",
+      "endDate": "2021-03-03",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-04-01",
+      "endDate": "2021-04-08",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-04-13",
+      "endDate": "2021-04-15",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-04-18",
+      "endDate": "2021-04-21",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-05-01",
+      "endDate": "2021-05-04",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-05-08",
+      "endDate": "2021-05-11",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-05-17",
+      "endDate": "2021-05-21",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-06-12",
+      "endDate": "2021-06-14",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-07-08",
+      "endDate": "2021-07-10",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-07-10",
+      "endDate": "2021-07-13",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-07-15",
+      "endDate": "2021-07-19",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-07-25",
+      "endDate": "2021-08-01",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-09-21",
+      "endDate": "2021-09-28",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-10-04",
+      "endDate": "2021-10-11",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-11-24",
+      "endDate": "2021-12-01",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-12-14",
+      "endDate": "2021-12-16",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-12-17",
+      "endDate": "2021-12-19",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2021-12-22",
+      "endDate": "2021-12-24",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-01-16",
+      "endDate": "2022-01-19",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-01-17",
+      "endDate": "2022-01-21",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-02-16",
+      "endDate": "2022-02-18",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-03-06",
+      "endDate": "2022-03-08",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-03-13",
+      "endDate": "2022-03-17",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-03-14",
+      "endDate": "2022-03-21",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-03-22",
+      "endDate": "2022-03-29",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-04-03",
+      "endDate": "2022-04-10",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-04-12",
+      "endDate": "2022-04-16",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-04-15",
+      "endDate": "2022-04-17",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-05-17",
+      "endDate": "2022-05-20",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-06-16",
+      "endDate": "2022-06-23",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-07-16",
+      "endDate": "2022-07-18",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-08-23",
+      "endDate": "2022-08-27",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-09-13",
+      "endDate": "2022-09-20",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-09-19",
+      "endDate": "2022-09-21",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-10-17",
+      "endDate": "2022-10-19",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-12-08",
+      "endDate": "2022-12-11",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2022-12-18",
+      "endDate": "2022-12-22",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-01-19",
+      "endDate": "2023-01-21",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-02-09",
+      "endDate": "2023-02-13",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-02-18",
+      "endDate": "2023-02-25",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-02-22",
+      "endDate": "2023-02-24",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-03-05",
+      "endDate": "2023-03-09",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-03-17",
+      "endDate": "2023-03-21",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-03-24",
+      "endDate": "2023-03-26",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-04-02",
+      "endDate": "2023-04-04",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-04-16",
+      "endDate": "2023-04-20",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-05-07",
+      "endDate": "2023-05-10",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-05-17",
+      "endDate": "2023-05-20",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-06-14",
+      "endDate": "2023-06-16",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-07-18",
+      "endDate": "2023-07-22",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-08-11",
+      "endDate": "2023-08-14",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-08-20",
+      "endDate": "2023-08-24",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-10-21",
+      "endDate": "2023-10-23",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-11-06",
+      "endDate": "2023-11-08",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-11-19",
+      "endDate": "2023-11-23",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-12-02",
+      "endDate": "2023-12-04",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2023-12-22",
+      "endDate": "2023-12-24",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-02-01",
+      "endDate": "2024-02-03",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-02-09",
+      "endDate": "2024-02-11",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-02-25",
+      "endDate": "2024-02-27",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-03-06",
+      "endDate": "2024-03-08",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-03-10",
+      "endDate": "2024-03-12",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-03-12",
+      "endDate": "2024-03-14",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-04-17",
+      "endDate": "2024-04-19",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-05-09",
+      "endDate": "2024-05-11",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-05-21",
+      "endDate": "2024-05-24",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-05-23",
+      "endDate": "2024-05-30",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-06-16",
+      "endDate": "2024-06-19",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-07-01",
+      "endDate": "2024-07-03",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-08-11",
+      "endDate": "2024-08-13",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-08-14",
+      "endDate": "2024-08-16",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-10-24",
+      "endDate": "2024-10-28",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-11-20",
+      "endDate": "2024-11-23",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2024-12-08",
+      "endDate": "2024-12-10",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-01-02",
+      "endDate": "2025-01-09",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-01-05",
+      "endDate": "2025-01-07",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-02-17",
+      "endDate": "2025-02-20",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-02-22",
+      "endDate": "2025-02-26",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-02-23",
+      "endDate": "2025-02-25",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-03-08",
+      "endDate": "2025-03-12",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-03-15",
+      "endDate": "2025-03-22",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-03-17",
+      "endDate": "2025-03-19",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-03-23",
+      "endDate": "2025-03-26",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-04-11",
+      "endDate": "2025-04-18",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-04-19",
+      "endDate": "2025-04-22",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-04-22",
+      "endDate": "2025-04-24",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-05-05",
+      "endDate": "2025-05-07",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-05-07",
+      "endDate": "2025-05-09",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-05-10",
+      "endDate": "2025-05-12",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-07-10",
+      "endDate": "2025-07-12",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-07-24",
+      "endDate": "2025-07-27",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-08-05",
+      "endDate": "2025-08-07",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-08-09",
+      "endDate": "2025-08-13",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-10-07",
+      "endDate": "2025-10-10",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-10-19",
+      "endDate": "2025-10-21",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-11-02",
+      "endDate": "2025-11-05",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-11-17",
+      "endDate": "2025-11-19",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-11-20",
+      "endDate": "2025-11-22",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2025-12-07",
+      "endDate": "2025-12-11",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-01-07",
+      "endDate": "2026-01-10",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-01-14",
+      "endDate": "2026-01-16",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-01-19",
+      "endDate": "2026-01-26",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-02-10",
+      "endDate": "2026-02-12",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-02-16",
+      "endDate": "2026-02-18",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-02-17",
+      "endDate": "2026-02-21",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-03-01",
+      "endDate": "2026-03-03",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-03-06",
+      "endDate": "2026-03-08",
+      "days": 3,
+      "nights": 2,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-03-10",
+      "endDate": "2026-03-14",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-04-11",
+      "endDate": "2026-04-14",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-05-09",
+      "endDate": "2026-05-16",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-07-12",
+      "endDate": "2026-07-16",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-07-18",
+      "endDate": "2026-07-21",
+      "days": 4,
+      "nights": 3,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-07-22",
+      "endDate": "2026-07-26",
+      "days": 5,
+      "nights": 4,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-08-03",
+      "endDate": "2026-08-10",
+      "days": 8,
+      "nights": 7,
+      "status": "COMPLETED"
+    },
+    {
+      "startDate": "2026-10-04",
+      "endDate": "2026-10-08",
+      "days": 5,
+      "nights": 4,
+      "status": "ONGOING"
+    },
+    {
+      "startDate": "2026-11-20",
+      "endDate": "2026-11-23",
+      "days": 4,
+      "nights": 3,
+      "status": "UPCOMING"
+    }
+  ],
+  "funFacts": [
+    {
+      "guestId": "guest-1",
+      "text": "Dette er besøk nr. 125 for Anna!",
+      "priority": 95
+    },
+    {
+      "guestId": "guest-1",
+      "text": "Neste besøk for Anna er om 41 dager",
+      "priority": 60
+    },
+    {
+      "guestId": "guest-1",
+      "text": "Anna har vært på hytta ca. 12 % av livet sitt",
+      "priority": 45
+    },
+    {
+      "guestId": "guest-1",
+      "text": "Anna liker hyttelivet mest om sommeren",
+      "priority": 45
+    },
+    {
+      "guestId": "guest-1",
+      "text": "Rekordåret til Anna var 2023 med 24 besøk",
+      "priority": 35
+    }
+  ]
+}

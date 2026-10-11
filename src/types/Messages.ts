@@ -1,5 +1,5 @@
 import { Config } from './Config'
-import { GuestDetailStats, isGuestDetailStats } from './GuestDetailStats'
+import { GuestProfileStats, isGuestProfileStats } from './GuestProfileStats'
 import { isLiveStats, LiveStats } from './LiveStats'
 
 /** Socket payload sent from the frontend to the node helper to request fresh live stats. */
@@ -29,23 +29,23 @@ export type LiveStatsError = {
 }
 
 /** Socket payload sent from the frontend to the node helper to request the stats of one guest. */
-export type GuestStatsRequest = LiveStatsRequest & {
+export type GuestProfileRequest = LiveStatsRequest & {
   /** The guest to fetch stats for. */
   guestId: string
 }
 
-/** Socket payload sent from the node helper to the frontend with the validated guest stats. */
-export type GuestStatsResponse = {
+/** Socket payload sent from the node helper to the frontend with the validated guest profile. */
+export type GuestProfileResponse = {
   /** Identifier of the module instance that made the request. */
   identifier: string
   /** The guest the stats belong to, echoed back so the instance can recognise the reply. */
   guestId: string
   /** The validated response of `GET /api/stats/guests/{guestId}`. */
-  guestStats: GuestDetailStats
+  profile: GuestProfileStats
 }
 
-/** Socket payload sent from the node helper to the frontend when the guest stats could not be fetched. */
-export type GuestStatsError = {
+/** Socket payload sent from the node helper to the frontend when the guest profile could not be fetched. */
+export type GuestProfileError = {
   /** Identifier of the module instance that made the request. */
   identifier: string
   /** The guest the request was for. */
@@ -82,25 +82,25 @@ export function isLiveStatsError(payload: unknown): payload is LiveStatsError {
   return isRecord(payload) && typeof payload.identifier === 'string' && typeof payload.message === 'string'
 }
 
-/** Type guard for {@link GuestStatsRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
-export function isGuestStatsRequest(payload: unknown): payload is GuestStatsRequest {
+/** Type guard for {@link GuestProfileRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
+export function isGuestProfileRequest(payload: unknown): payload is GuestProfileRequest {
   return (
     isLiveStatsRequest(payload) && 'guestId' in payload && typeof payload.guestId === 'string' && payload.guestId !== ''
   )
 }
 
-/** Type guard for {@link GuestStatsResponse}. */
-export function isGuestStatsResponse(payload: unknown): payload is GuestStatsResponse {
+/** Type guard for {@link GuestProfileResponse}. */
+export function isGuestProfileResponse(payload: unknown): payload is GuestProfileResponse {
   return (
     isRecord(payload) &&
     typeof payload.identifier === 'string' &&
     typeof payload.guestId === 'string' &&
-    isGuestDetailStats(payload.guestStats)
+    isGuestProfileStats(payload.profile)
   )
 }
 
-/** Type guard for {@link GuestStatsError}. */
-export function isGuestStatsError(payload: unknown): payload is GuestStatsError {
+/** Type guard for {@link GuestProfileError}. */
+export function isGuestProfileError(payload: unknown): payload is GuestProfileError {
   return (
     isRecord(payload) &&
     typeof payload.identifier === 'string' &&
