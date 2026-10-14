@@ -167,8 +167,9 @@ test.describe('MMM-CabinStats', () => {
       await page.clock.setFixedTime(new Date('2026-10-10T10:00:00'))
     })
 
-    function guestButton(view: Locator, name: string): Locator {
-      return view.getByRole('button', { name: `Vis statistikk for ${name}` })
+    // A guest can be in both the current guests and the next visit, so pick the list.
+    function guestButton(view: Locator, name: string, list = 'Gjester på hytta'): Locator {
+      return view.getByRole('list', { name: list }).getByRole('button', { name: `Vis statistikk for ${name}` })
     }
 
     function guestDialog(page: Page, name: string): Locator {
@@ -231,7 +232,7 @@ test.describe('MMM-CabinStats', () => {
     })
 
     test('shows the rank among guests for a guest, from a guest of the next visit', async ({ page }) => {
-      await guestButton(notOccupiedNext(page), 'Dora').click()
+      await guestButton(notOccupiedNext(page), 'Dora', 'Gjester neste besøk').click()
 
       const dialog = guestDialog(page, 'Dora Eksempel')
       await expect(dialog.getByRole('heading', { level: 2, name: '#9 Dora Eksempel' })).toBeVisible()
