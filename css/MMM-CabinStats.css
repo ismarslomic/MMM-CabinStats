@@ -4,12 +4,15 @@ div.MMM-CabinStats {
 }
 /* stylelint-enable selector-class-pattern */
 
-.cabin-stats {
+.cabin-stats,
+.cabin-overlay {
   --cabin-accent: #ffc83d;
   --cabin-ring: rgb(255 255 255 / 85%);
   --cabin-avatar-large: 110px;
   --cabin-avatar-small: 48px;
+}
 
+.cabin-stats {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -50,6 +53,21 @@ div.MMM-CabinStats {
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.cabin-guest-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .cabin-avatar {
@@ -145,4 +163,355 @@ div.MMM-CabinStats {
 .cabin-stats-facts {
   max-width: none;
   text-align: center;
+}
+
+/*
+ * The guest view covers the whole screen, and with it every other module. It is drawn for a portrait mirror of
+ * 1440x2560 pixels. All sizes are multiples of --cabin-u (14.4 px there), which also fits landscape windows.
+ */
+.cabin-overlay {
+  --cabin-u: min(1vw, 0.5625vh);
+  --cabin-avatar-large: calc(15 * var(--cabin-u));
+  --cabin-heat-0: #16221f;
+  --cabin-heat-1: #2f5d4a;
+  --cabin-heat-2: #3f8a63;
+  --cabin-heat-3: #6dc08a;
+  --cabin-heat-4: #d6f5a8;
+  --cabin-mint: #b8f3d0;
+  --cabin-dashed: rgb(255 255 255 / 25%);
+
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: calc(5 * var(--cabin-u)) calc(7 * var(--cabin-u));
+  overflow: hidden;
+  background: #000;
+  line-height: 1.2;
+}
+
+.cabin-overlay .cabin-avatar-large {
+  font-size: calc(6 * var(--cabin-u));
+}
+
+.cabin-overlay-close {
+  position: absolute;
+  top: calc(3 * var(--cabin-u));
+  right: calc(3 * var(--cabin-u));
+  width: calc(9 * var(--cabin-u));
+  height: calc(9 * var(--cabin-u));
+  border: 2px solid var(--cabin-ring);
+  border-radius: 50%;
+  background: none;
+  color: #fff;
+  font-size: calc(4 * var(--cabin-u));
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.cabin-overlay-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(1.5 * var(--cabin-u));
+  margin-bottom: calc(3 * var(--cabin-u));
+}
+
+.cabin-overlay-name,
+.cabin-overlay-status {
+  margin: 0;
+}
+
+.cabin-overlay-name {
+  font-size: calc(6 * var(--cabin-u));
+  font-weight: 300;
+}
+
+.cabin-overlay-rank {
+  color: var(--cabin-mint);
+  font-weight: 700;
+}
+
+.cabin-overlay-rank-first {
+  color: var(--cabin-accent);
+}
+
+.cabin-overlay-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: calc(2 * var(--cabin-u));
+  width: 100%;
+  min-height: 0;
+}
+
+.cabin-overlay-status {
+  font-size: calc(3.5 * var(--cabin-u));
+  font-weight: 300;
+}
+
+.cabin-overlay-button {
+  min-width: calc(14 * var(--cabin-u));
+  min-height: calc(6 * var(--cabin-u));
+  padding: 0 calc(3 * var(--cabin-u));
+  border: 2px solid var(--cabin-ring);
+  border-radius: calc(3 * var(--cabin-u));
+  background: none;
+  color: #fff;
+  font-size: calc(3 * var(--cabin-u));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* The profile fills the body, with the sections spread over the height that is left. */
+.cabin-profile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(2.8 * var(--cabin-u));
+  width: 100%;
+  min-height: 0;
+  padding-top: 0;
+}
+
+.cabin-profile-subtitle,
+.cabin-profile-total,
+.cabin-profile-dates,
+.cabin-profile-fact,
+.cabin-heat-title,
+.cabin-heat-caption {
+  margin: 0;
+  text-align: center;
+}
+
+.cabin-profile-subtitle {
+  font-size: calc(3 * var(--cabin-u));
+}
+
+.cabin-profile-total {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.cabin-profile-total-number {
+  color: var(--cabin-mint);
+  font-size: calc(13 * var(--cabin-u));
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cabin-profile-total-label {
+  font-size: calc(3.2 * var(--cabin-u));
+}
+
+.cabin-heat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(1 * var(--cabin-u));
+  width: 100%;
+}
+
+.cabin-heat-title {
+  font-size: calc(2.4 * var(--cabin-u));
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.cabin-heat-caption {
+  font-size: calc(2.2 * var(--cabin-u));
+}
+
+/* Row height shrinks when the grid gets more than seven years, so the view keeps fitting the screen. */
+.cabin-heatmap {
+  --cabin-row: min(calc(6.6 * var(--cabin-u)), calc(46 * var(--cabin-u) / var(--cabin-years)));
+
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: calc(0.8 * var(--cabin-u));
+}
+
+.cabin-heatmap-corner,
+.cabin-heatmap-year {
+  width: calc(9 * var(--cabin-u));
+}
+
+.cabin-heatmap-month,
+.cabin-heatmap-year {
+  color: #999;
+  font-size: calc(2.2 * var(--cabin-u));
+  font-weight: 400;
+  text-align: center;
+}
+
+.cabin-heatmap-year {
+  text-align: left;
+}
+
+.cabin-heat-cell {
+  position: relative;
+  height: var(--cabin-row);
+  border-radius: calc(1 * var(--cabin-u));
+  background: var(--cabin-heat-0);
+}
+
+.cabin-heat-cell[data-level='1'] {
+  background: var(--cabin-heat-1);
+}
+
+.cabin-heat-cell[data-level='2'] {
+  background: var(--cabin-heat-2);
+}
+
+.cabin-heat-cell[data-level='3'] {
+  background: var(--cabin-heat-3);
+}
+
+.cabin-heat-cell[data-level='4'] {
+  background: var(--cabin-heat-4);
+}
+
+.cabin-heat-cell[data-state='future'],
+.cabin-heat-cell[data-state='nodata'] {
+  border: 2px dashed var(--cabin-dashed);
+  background: none;
+}
+
+.cabin-heat-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(1.6 * var(--cabin-u));
+  height: calc(1.6 * var(--cabin-u));
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--cabin-accent);
+}
+
+.cabin-heat-dot-static {
+  position: static;
+  transform: none;
+}
+
+.cabin-heat-legend {
+  display: flex;
+  align-items: center;
+  gap: calc(2.5 * var(--cabin-u));
+}
+
+.cabin-heat-legend-item {
+  display: flex;
+  align-items: center;
+  gap: calc(0.8 * var(--cabin-u));
+}
+
+.cabin-heat-swatch {
+  width: calc(3.2 * var(--cabin-u));
+  height: calc(3.2 * var(--cabin-u));
+}
+
+.cabin-heat-legend-label {
+  color: #999;
+  font-size: calc(2.2 * var(--cabin-u));
+}
+
+.cabin-tiles {
+  display: flex;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cabin-tiles-primary {
+  padding-top: calc(2 * var(--cabin-u));
+  border-top: 1px solid var(--cabin-dashed);
+}
+
+.cabin-tiles-secondary {
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(1.5 * var(--cabin-u)) calc(3 * var(--cabin-u));
+}
+
+.cabin-tile {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(0.6 * var(--cabin-u));
+  text-align: center;
+}
+
+.cabin-tiles-secondary .cabin-tile {
+  flex: 0 1 calc(19 * var(--cabin-u));
+  align-self: flex-start;
+}
+
+.cabin-tiles-primary .cabin-tile + .cabin-tile {
+  border-left: 1px solid var(--cabin-dashed);
+}
+
+.cabin-tile-value {
+  color: var(--cabin-mint);
+  font-size: calc(7.5 * var(--cabin-u));
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cabin-tile-label {
+  color: #999;
+  font-size: calc(2.4 * var(--cabin-u));
+}
+
+.cabin-tiles-secondary .cabin-tile-value {
+  color: #fff;
+  font-size: calc(4.2 * var(--cabin-u));
+}
+
+.cabin-tiles-secondary .cabin-tile-label {
+  font-size: calc(2 * var(--cabin-u));
+}
+
+.cabin-profile-dates {
+  font-size: calc(2.2 * var(--cabin-u));
+}
+
+.cabin-profile-fact {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 100%;
+  min-height: calc(9 * var(--cabin-u));
+  font-size: calc(3.6 * var(--cabin-u));
+  font-weight: 300;
+}
+
+.cabin-fade-in {
+  animation: cabin-fade-in 0.8s ease-out;
+}
+
+@keyframes cabin-fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.cabin-guest-button:focus-visible,
+.cabin-overlay-close:focus-visible,
+.cabin-overlay-button:focus-visible {
+  outline: 2px solid var(--cabin-accent);
+  outline-offset: 4px;
 }

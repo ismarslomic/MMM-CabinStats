@@ -1,0 +1,48 @@
+{
+  "guest": {
+    "guestId": "guest-3",
+    "firstName": "Carl",
+    "lastName": "Eksempel",
+    "age": 38,
+    "isFamily": false,
+    "avatarUrl": "/api/guests/guest-3/avatar",
+    "isFirstVisit": true,
+    "firstVisitDate": "2026-10-04",
+    "lastVisitDate": null,
+    "yearsVisited": [2026],
+    "currentYear": {
+      "totalVisits": 1,
+      "totalDays": 5,
+      "totalNights": 4,
+      "visitsRank": 40,
+      "daysRank": 40,
+      "visitsRankAmongGuests": 40,
+      "daysRankAmongGuests": 40
+    },
+    "allTime": {
+      "totalVisits": 1,
+      "totalDays": 5,
+      "totalNights": 4,
+      "visitsRank": 40,
+      "daysRank": 40,
+      "visitsRankAmongGuests": 40,
+      "daysRankAmongGuests": 40
+    }
+  },
+  "visits": [
+    {
+      "startDate": "2026-10-04",
+      "endDate": "2026-10-08",
+      "days": 5,
+      "nights": 4,
+      "status": "ONGOING"
+    }
+  ],
+  "funFacts": [
+    {
+      "guestId": "guest-3",
+      "text": "Carl er 2 besøk unna å nå 3 besøk på hytta",
+      "priority": 40
+    }
+  ]
+}

@@ -43,17 +43,20 @@ describe('resolveConfig', () => {
     expect(hasApiBaseUrl(config)).toBe(true)
   })
 
-  test.each(['updateInterval', 'requestTimeout', 'guestFactInterval', 'cabinFactInterval'] as const)(
-    'falls back for an invalid %s',
-    (option) => {
-      for (const invalid of [0, -1, 1.5, Number.NaN, Infinity, 2 ** 31, '1000', null]) {
-        expect(resolveConfig({ [option]: invalid })[option]).toBe(defaultConfig[option])
-      }
-      expect(resolveConfig({ [option]: 5000 })[option]).toBe(5000)
+  test.each([
+    'updateInterval',
+    'requestTimeout',
+    'guestFactInterval',
+    'cabinFactInterval',
+    'guestViewTimeout',
+  ] as const)('falls back for an invalid %s', (option) => {
+    for (const invalid of [0, -1, 1.5, Number.NaN, Infinity, 2 ** 31, '1000', null]) {
+      expect(resolveConfig({ [option]: invalid })[option]).toBe(defaultConfig[option])
     }
-  )
+    expect(resolveConfig({ [option]: 5000 })[option]).toBe(5000)
+  })
 
-  test.each(['showNextVisit', 'showCabinFacts', 'pauseWhenHidden'] as const)(
+  test.each(['showNextVisit', 'showCabinFacts', 'pauseWhenHidden', 'guestView'] as const)(
     'falls back for a non-boolean %s',
     (option) => {
       expect(resolveConfig({ [option]: 'yes' })[option]).toBe(defaultConfig[option])

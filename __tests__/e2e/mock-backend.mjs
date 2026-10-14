@@ -7,6 +7,7 @@ import { deflateSync, crc32 } from 'node:zlib'
  * gets its own data through its `apiBaseUrl`:
  *
  *   GET  /{scenario}/api/stats                  fixture JSON, or 503 while the scenario is switched off
+ *   GET  /{scenario}/api/stats/guests/{id}     empty guest profile object (the contract has no properties yet)
  *   GET  /{scenario}/api/guests/{id}/avatar     generated placeholder PNG
  *   POST /{scenario}/control/down | up          switch the scenario off or on (for outage tests)
  *   GET  /health                                readiness probe for Playwright `webServer`
@@ -29,6 +30,16 @@ const fixtures = new Map(
   ])
 )
 const disabled = new Set()
+
+/** Guest id -> guest profile fixture in `__tests__/fixtures`, the same for every scenario. */
+const profiles = new Map(
+  Object.entries({
+    'guest-1': 'guest-profile-regular.json',
+    'guest-3': 'guest-profile-first-visit.json',
+    'guest-4': 'guest-profile-sporadic.json',
+    'guest-5': 'guest-profile-no-visits.json',
+  }).map(([guestId, file]) => [guestId, readFileSync(new URL(`../fixtures/${file}`, import.meta.url), 'utf8')])
+)
 
 function pngChunk(type, data) {
   const body = Buffer.concat([Buffer.from(type, 'ascii'), data])
@@ -83,6 +94,13 @@ const server = createServer((request, response) => {
   if (disabled.has(scenario)) return send(response, 503, 'text/plain', 'Switched off')
   if (request.method === 'GET' && route === '/api/stats') {
     return send(response, 200, 'application/json', fixtures.get(scenario))
+  }
+  const profileMatch = request.method === 'GET' ? /^\/api\/stats\/guests\/([^/]+)$/.exec(route) : null
+  if (profileMatch) {
+    const profile = profiles.get(decodeURIComponent(profileMatch[1]))
+    return profile
+      ? send(response, 200, 'application/json', profile)
+      : send(response, 404, 'text/plain', 'Guest not found')
   }
   if (request.method === 'GET' && /^\/api\/guests\/[^/]+\/avatar$/.test(route)) {
     return send(response, 200, 'image/png', avatar)

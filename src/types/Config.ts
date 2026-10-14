@@ -23,6 +23,12 @@ export type Config = {
    * the guest and cabin facts. Use two instances at different positions to place the facts elsewhere.
    */
   display: Display
+  /** Open a full-screen stats view for a guest when the avatar is tapped. */
+  guestView: boolean
+  /** Close the guest view after this many milliseconds without touch, so it never stays open on the mirror. */
+  guestViewTimeout: number
+  /** Rotation interval of the fun facts in the guest view in milliseconds (6–8 s recommended). */
+  guestViewFactInterval: number
   /** Show the block with the upcoming reservation. */
   showNextVisit: boolean
   /** Show the cabin fun facts strip. */
@@ -44,6 +50,9 @@ export const defaultConfig: Config = {
   guestFactInterval: 18_000,
   cabinFactInterval: 45_000,
   display: 'full',
+  guestView: true,
+  guestViewTimeout: 60_000,
+  guestViewFactInterval: 7_000,
   showNextVisit: true,
   showCabinFacts: true,
   pauseWhenHidden: false,
@@ -99,6 +108,9 @@ export function resolveConfig(raw: unknown): Config {
     guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
     cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
     display: oneOf(config.display, displays, defaultConfig.display),
+    guestView: boolean(config.guestView, defaultConfig.guestView),
+    guestViewTimeout: positiveTimerDelay(config.guestViewTimeout, defaultConfig.guestViewTimeout),
+    guestViewFactInterval: positiveTimerDelay(config.guestViewFactInterval, defaultConfig.guestViewFactInterval),
     showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
     showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
     pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),

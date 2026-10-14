@@ -1,6 +1,9 @@
+/// <reference lib="dom" />
 import { Config } from './Config'
 import { LiveStats } from './LiveStats'
 import { TemplateData } from '../frontend/display'
+import { GuestViewState } from '../frontend/guestView'
+import { GuestProfileStats } from './GuestProfileStats'
 
 /** What the frontend remembers between renders. */
 export type FrontendState = {
@@ -12,6 +15,8 @@ export type FrontendState = {
   guestFactIndex: number
   /** Index into the cabin facts. */
   cabinFactIndex: number
+  /** The open guest view, `undefined` while it is closed. */
+  guestView?: GuestViewState
 }
 
 type MagicMirrorModule = Module.ModuleProperties<Config>
@@ -67,6 +72,15 @@ export interface FrontendModule {
 
   /**
    * @official
+   * The nunjucks environment of this module: renders the templates in the module folder, with the `translate` filter.
+   * The callback gets the rendered html, or an error.
+   */
+  nunjucksEnvironment(): {
+    render(name: string, context: object, callback: (error: Error | null, html: string | null) => void): void
+  }
+
+  /**
+   * @official
    * Default configuration of the module. Values here are merged with (and overridden by) the `config`
    * defined for the module in `config.js`.
    */
@@ -105,6 +119,45 @@ export interface FrontendModule {
   isPollingSuspended?: boolean
 
   /**
+   * @custom
+   * The full-screen guest view while it is open, `undefined` otherwise. It lives in `document.body`, outside the
+   * module's own DOM, so re-rendering the module never touches it.
+   */
+  guestOverlay?: HTMLElement
+
+  /**
+   * @custom
+   * Counts the renders of the guest view. Rendering is asynchronous, so a render that is no longer the latest, or
+   * that finishes after the view was closed, is dropped.
+   */
+  guestViewRenderCount: number
+
+  /**
+   * @custom
+   * Handle of the timer that closes the guest view after `config.guestViewTimeout` ms without touch.
+   */
+  guestViewTimer?: ReturnType<typeof setTimeout>
+
+  /**
+   * @custom
+   * Handle of the interval timer that rotates the fun facts in the guest view. `undefined` when not running.
+   */
+  guestViewFactTimer?: ReturnType<typeof setInterval>
+
+  /**
+   * @custom
+   * Click listener on the document that opens the guest view for a tapped avatar of this instance.
+   * `undefined` until MagicMirror has created the DOM.
+   */
+  documentClickHandler?: (event: MouseEvent) => void
+
+  /**
+   * @custom
+   * Key listener on the document that closes the guest view on Escape. Only set while the view is open.
+   */
+  documentKeyHandler?: (event: KeyboardEvent) => void
+
+  /**
    * @official
    * Called when all modules are loaded and the system is ready to boot up.
    * Use it to set up initial state, such as starting update timers or requesting data from the node helper.
@@ -140,6 +193,13 @@ export interface FrontendModule {
    * configured language, or the first entry when there is none, and the `translate` filter in the template uses it.
    */
   getTranslations(): Record<string, string>
+
+  /**
+   * @official
+   * Called when a notification arrives from MagicMirror or another module. Used to wait for
+   * `DOM_OBJECTS_CREATED`, the first moment the avatars can be tapped.
+   */
+  notificationReceived(notification: string): void
 
   /**
    * @official
@@ -212,4 +272,61 @@ export interface FrontendModule {
    * Moves to the next cabin fact and re-renders. Does nothing when there is at most one fact to show.
    */
   rotateCabinFact(): void
+
+  /**
+   * @custom
+   * Opens the full-screen guest view for a guest of the ongoing or next reservation and requests the guest profile
+   * once from the node helper. Does nothing when `config.guestView` is off or the guest is unknown.
+   */
+  openGuestView(guestId: string): void
+
+  /**
+   * @custom
+   * Closes the guest view and its timers and listeners. Safe to call when the view is closed.
+   */
+  closeGuestView(): void
+
+  /**
+   * @custom
+   * Renders `templates/guest-view.njk` for the current state and replaces the guest view in `document.body` with it.
+   */
+  renderGuestView(): void
+
+  /**
+   * @custom
+   * (Re)starts the timer that closes the guest view after `config.guestViewTimeout` ms.
+   */
+  startGuestViewTimeout(): void
+
+  /**
+   * @custom
+   * Asks the node helper for the stats of the guest of the open view.
+   */
+  requestGuestProfile(guestId: string): void
+
+  /**
+   * @custom
+   * Applies a guest profile reply to the open guest view and re-renders it, and starts the fun fact rotation when
+   * loaded. Replies for other instances, closed views or another guest are ignored.
+   */
+  finishGuestProfile(identifier: string, guestId: string, status: 'loaded' | 'error', profile?: GuestProfileStats): void
+
+  /**
+   * @custom
+   * Starts the timer that rotates the fun facts in the guest view every `config.guestViewFactInterval` ms. Does
+   * nothing when the profile has at most one fact.
+   */
+  startGuestViewFactRotation(): void
+
+  /**
+   * @custom
+   * Stops the fun fact rotation of the guest view. Safe to call when it is not running.
+   */
+  stopGuestViewFactRotation(): void
+
+  /**
+   * @custom
+   * Shows the next fun fact in the guest view without re-rendering the rest of the view.
+   */
+  rotateGuestViewFact(): void
 }

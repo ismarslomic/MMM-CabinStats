@@ -134,10 +134,36 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Guest statistics
-         * @description Returns guest statistics across all years: top 10 guests by number of visits and by total nights, gender distribution, and age group breakdown (0–12, 13–17, 18–30, 31–50, 51+). Suitable for a hall-of-fame view or demographic overview.
+         * Statistics for all guests
+         * @description Returns statistics for all guests across all years: top 10 guests by number of visits and by total nights, gender distribution, and age group breakdown (0–12, 13–17, 18–30, 31–50, 51+). Suitable for a hall-of-fame view or demographic overview.
          */
-        get: operations["getGuestStats"];
+        get: operations["getAllGuestsStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/guests/{guestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Guest profile
+         * @description Returns the profile of one guest as of today, suitable for a guest page on a smart mirror:
+         *
+         *     * **guest**: the guest's statistics, with total visits, days and nights, ranks among all guests and among guests only (family excluded), first and last visit date and an avatar url. If the guest is at the cabin right now, the last visit date is the last visit before the current one.
+         *     * **visits**: all visits of the guest, historical, ongoing and upcoming, oldest first, each with a status (COMPLETED, ONGOING or UPCOMING), days and nights. Suitable for a timeline.
+         *     * **funFacts**: ready-to-display Norwegian fun facts about the guest, sorted by priority (highest first). The list is not capped, so pick the facts to display. A fact is only included when it is true for the guest, so the list can be short or empty for guests with few visits.
+         *
+         *     Driving statistics are not included. Upcoming visits are not counted in totals or facts.
+         */
+        get: operations["getGuestProfileStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -159,13 +185,22 @@ export interface components {
             totalVisits: number;
             /** @description Number of days the guest was present at the cabin in the period, up to and including today. */
             totalDays: number;
-            /** @description Guest's rank by total visits among all guests in the period (1 = most). Tied guests share rank. Null if no visits. */
+            /** @description Number of nights of the reservations the guest was part of that started in the period (full stay, also for an ongoing stay). Same counting as totalVisits. */
+            totalNights: number;
+            /** @description Guest's rank by total visits among all guests, family included, in the period (1 = most). Tied guests share rank. Null if no visits. */
             visitsRank?: number | null;
-            /** @description Guest's rank by total days among all guests in the period (1 = most). Tied guests share rank. Null if no visits. */
+            /** @description Guest's rank by total days among all guests, family included, in the period (1 = most). Tied guests share rank. Null if no visits. */
             daysRank?: number | null;
+            /** @description Guest's rank by total visits among guests only, family members excluded (1 = most). Tied guests share rank. Null for family members and if no visits. */
+            visitsRankAmongGuests?: number | null;
+            /** @description Guest's rank by total days among guests only, family members excluded (1 = most). Tied guests share rank. Null for family members and if no visits. */
+            daysRankAmongGuests?: number | null;
         };
-        /** LiveGuestStats */
-        LiveGuestStats: {
+        /**
+         * GuestStats
+         * @description Statistics for one guest as of today, counting only reservations that have started. Used for the guests of the current and next reservation in the live stats and for the guest profile.
+         */
+        GuestStats: {
             /** @description Internal unique identifier of the guest. */
             guestId: string;
             /** @description Guest's first name. */
@@ -178,7 +213,7 @@ export interface components {
             isFamily: boolean;
             /** @description Relative URL to the guest's avatar image (JPEG), see GET /api/guests/{guestId}/avatar. Null if the guest has no avatar. */
             avatarUrl?: string | null;
-            /** @description True if the guest has no reservations that started before this reservation. */
+            /** @description True if the guest has no reservations that started before this reservation. In a guest profile this is true only when the guest is at the cabin right now and the ongoing visit is the first one. */
             isFirstVisit: boolean;
             /**
              * Format: date
@@ -187,7 +222,7 @@ export interface components {
             firstVisitDate?: string | null;
             /**
              * Format: date
-             * @description End date of the guest's last completed visit before this reservation. Null if there is no completed visit.
+             * @description End date of the guest's last completed visit before this reservation. Null if there is no completed visit. In a guest profile: the last visit before the current one if the guest is at the cabin right now, otherwise the last completed visit.
              */
             lastVisitDate?: string | null;
             /** @description Years in which the guest has started reservations, in descending order. */
@@ -211,7 +246,7 @@ export interface components {
              */
             endDate: string;
             /** @description Statistics for each guest in the current reservation, ordered by current year days rank. */
-            guests: components["schemas"]["LiveGuestStats"][];
+            guests: components["schemas"]["GuestStats"][];
             /** @description Number of nights remaining in the current reservation, from today until check-out. */
             remainingNights: number;
         } | null;
@@ -231,7 +266,7 @@ export interface components {
              */
             endDate: string;
             /** @description Statistics for each guest in the next reservation, ordered by current year days rank. */
-            guests: components["schemas"]["LiveGuestStats"][];
+            guests: components["schemas"]["GuestStats"][];
             /** @description Number of days from today until the next reservation starts. */
             daysUntil: number;
         } | null;
@@ -733,8 +768,8 @@ export interface components {
             /** @description Percentage of all registered guests in this age group, rounded to one decimal. */
             percent: number;
         };
-        /** GuestStats */
-        GuestStats: {
+        /** AllGuestsStats */
+        AllGuestsStats: {
             /** @description Top 10 guests ranked by total number of reservation visits across all years. */
             topGuestsByVisits: components["schemas"]["GuestRanking"][];
             /** @description Top 10 guests ranked by total number of days spent at the cabin across all years. */
@@ -742,6 +777,36 @@ export interface components {
             genderDistribution: components["schemas"]["GenderDistribution"];
             /** @description Age group breakdown of all registered guests, using current age at time of the request. */
             ageGroups: components["schemas"]["AgeGroup"][];
+        };
+        /** GuestVisit */
+        GuestVisit: {
+            /**
+             * Format: date
+             * @description First day of the visit (check-in date, inclusive).
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @description Last day of the visit (check-out date). Same semantics as the end date of a reservation.
+             */
+            endDate: string;
+            /** @description Number of calendar days of the whole visit, including arrival and departure day. */
+            days: number;
+            /** @description Number of nights of the whole visit. */
+            nights: number;
+            /**
+             * @description Where the visit stands today: COMPLETED (the guest has left), ONGOING (the guest is at the cabin) or UPCOMING (the visit has not started yet).
+             * @enum {string}
+             */
+            status: "COMPLETED" | "ONGOING" | "UPCOMING";
+        };
+        /** GuestProfileStats */
+        GuestProfileStats: {
+            guest: components["schemas"]["GuestStats"];
+            /** @description All visits of the guest, historical, ongoing and upcoming, oldest first. Suitable for a timeline. */
+            visits: components["schemas"]["GuestVisit"][];
+            /** @description Fun facts about the guest, as ready-to-display Norwegian text that mentions the guest by first name. Sorted by priority, highest first. Not capped, so pick the ones to display. */
+            funFacts: components["schemas"]["FunFact"][];
         };
     };
     responses: never;
@@ -957,7 +1022,7 @@ export interface operations {
             };
         };
     };
-    getGuestStats: {
+    getAllGuestsStats: {
         parameters: {
             query?: never;
             header?: never;
@@ -972,7 +1037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["GuestStats"];
+                    "application/json": components["schemas"]["AllGuestsStats"];
                 };
             };
             /** @description Unexpected server error. */
@@ -981,6 +1046,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getGuestProfileStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Internal unique identifier of the guest. */
+                guestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile of the guest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuestProfileStats"];
+                };
+            };
+            /** @description The guestId path parameter is missing. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description There is no guest with the given id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };

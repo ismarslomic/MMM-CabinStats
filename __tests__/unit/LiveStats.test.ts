@@ -69,6 +69,11 @@ describe('isLiveStats', () => {
     ['guest yearsVisited with string', (s: Json) => (s.currentReservation.guests[0].yearsVisited = ['a'])],
     ['guest without allTime', (s: Json) => delete s.currentReservation.guests[0].allTime],
     ['allTime totalVisits as string', (s: Json) => (s.currentReservation.guests[0].allTime.totalVisits = '1')],
+    ['allTime without totalNights', (s: Json) => delete s.currentReservation.guests[0].allTime.totalNights],
+    [
+      'allTime rank among guests as string',
+      (s: Json) => (s.currentReservation.guests[0].allTime.visitsRankAmongGuests = '1'),
+    ],
     ['currentYear visitsRank as string', (s: Json) => (s.currentReservation.guests[0].currentYear.visitsRank = '1')],
   ])('rejects %s', (_name, change) => {
     expect(isLiveStats(mutated(change))).toBe(false)

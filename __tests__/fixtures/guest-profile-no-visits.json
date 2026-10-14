@@ -1,0 +1,34 @@
+{
+  "guest": {
+    "guestId": "guest-5",
+    "firstName": "Eva",
+    "lastName": "Eksempel",
+    "age": 29,
+    "isFamily": false,
+    "avatarUrl": null,
+    "isFirstVisit": false,
+    "firstVisitDate": null,
+    "lastVisitDate": null,
+    "yearsVisited": [],
+    "currentYear": {
+      "totalVisits": 0,
+      "totalDays": 0,
+      "totalNights": 0,
+      "visitsRank": null,
+      "daysRank": null,
+      "visitsRankAmongGuests": null,
+      "daysRankAmongGuests": null
+    },
+    "allTime": {
+      "totalVisits": 0,
+      "totalDays": 0,
+      "totalNights": 0,
+      "visitsRank": null,
+      "daysRank": null,
+      "visitsRankAmongGuests": null,
+      "daysRankAmongGuests": null
+    }
+  },
+  "visits": [],
+  "funFacts": []
+}

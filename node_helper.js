@@ -39,6 +39,9 @@ var SocketNotification;
     SocketNotification["LIVE_STATS_REQUEST"] = "LIVE_STATS_REQUEST";
     SocketNotification["LIVE_STATS_RESPONSE"] = "LIVE_STATS_RESPONSE";
     SocketNotification["LIVE_STATS_ERROR"] = "LIVE_STATS_ERROR";
+    SocketNotification["GUEST_PROFILE_REQUEST"] = "GUEST_PROFILE_REQUEST";
+    SocketNotification["GUEST_PROFILE_RESPONSE"] = "GUEST_PROFILE_RESPONSE";
+    SocketNotification["GUEST_PROFILE_ERROR"] = "GUEST_PROFILE_ERROR";
 })(SocketNotification || (SocketNotification = {}));
 
 const displays = ['full', 'stats', 'facts'];
@@ -51,6 +54,9 @@ const defaultConfig = {
     guestFactInterval: 18_000,
     cabinFactInterval: 45_000,
     display: 'full',
+    guestView: true,
+    guestViewTimeout: 60_000,
+    guestViewFactInterval: 7_000,
     showNextVisit: true,
     showCabinFacts: true,
     pauseWhenHidden: false,
@@ -99,6 +105,9 @@ function resolveConfig(raw) {
         guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
         cabinFactInterval: positiveTimerDelay(config.cabinFactInterval, defaultConfig.cabinFactInterval),
         display: oneOf(config.display, displays, defaultConfig.display),
+        guestView: boolean(config.guestView, defaultConfig.guestView),
+        guestViewTimeout: positiveTimerDelay(config.guestViewTimeout, defaultConfig.guestViewTimeout),
+        guestViewFactInterval: positiveTimerDelay(config.guestViewFactInterval, defaultConfig.guestViewFactInterval),
         showNextVisit: boolean(config.showNextVisit, defaultConfig.showNextVisit),
         showCabinFacts: boolean(config.showCabinFacts, defaultConfig.showCabinFacts),
         pauseWhenHidden: boolean(config.pauseWhenHidden, defaultConfig.pauseWhenHidden),
@@ -134,14 +143,19 @@ function isOptional(value, isValid) {
 function isArrayOf(value, isValid) {
     return Array.isArray(value) && value.every(isValid);
 }
+
 function isGuestPeriodStats(value) {
     return (isRecord$1(value) &&
         isNumber(value.totalVisits) &&
         isNumber(value.totalDays) &&
+        isNumber(value.totalNights) &&
         isOptional(value.visitsRank, isNumber) &&
-        isOptional(value.daysRank, isNumber));
+        isOptional(value.daysRank, isNumber) &&
+        isOptional(value.visitsRankAmongGuests, isNumber) &&
+        isOptional(value.daysRankAmongGuests, isNumber));
 }
-function isLiveGuestStats(value) {
+/** Type guard for {@link GuestStats}. */
+function isGuestStats(value) {
     return (isRecord$1(value) &&
         isString(value.guestId) &&
         isString(value.firstName) &&
@@ -160,16 +174,17 @@ function isCurrentReservation(value) {
     return (isRecord$1(value) &&
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
-        isArrayOf(value.guests, isLiveGuestStats) &&
+        isArrayOf(value.guests, isGuestStats) &&
         isNumber(value.remainingNights));
 }
 function isNextReservation(value) {
     return (isRecord$1(value) &&
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
-        isArrayOf(value.guests, isLiveGuestStats) &&
+        isArrayOf(value.guests, isGuestStats) &&
         isNumber(value.daysUntil));
 }
+/** Type guard for {@link FunFact}. */
 function isFunFact(value) {
     return isRecord$1(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority);
 }
@@ -190,6 +205,27 @@ function isLiveStats(payload) {
         isArrayOf(payload.nextVisitFunFacts, isFunFact));
 }
 
+const visitStatuses = ['COMPLETED', 'ONGOING', 'UPCOMING'];
+function isGuestVisit(value) {
+    return (isRecord$1(value) &&
+        isIsoDate(value.startDate) &&
+        isIsoDate(value.endDate) &&
+        isNumber(value.days) &&
+        isNumber(value.nights) &&
+        isString(value.status) &&
+        visitStatuses.some((status) => status === value.status));
+}
+/**
+ * Type guard for {@link GuestProfileStats}. The payload crosses a runtime boundary (backend response), so every
+ * field the module reads is checked.
+ */
+function isGuestProfileStats(value) {
+    return (isRecord$1(value) &&
+        isGuestStats(value.guest) &&
+        isArrayOf(value.visits, isGuestVisit) &&
+        isArrayOf(value.funFacts, isFunFact));
+}
+
 function isRecord(value) {
     return typeof value === 'object' && value !== null;
 }
@@ -200,15 +236,17 @@ function isRecord(value) {
 function isLiveStatsRequest(payload) {
     return isRecord(payload) && typeof payload.identifier === 'string' && isRecord(payload.config);
 }
+/** Type guard for {@link GuestProfileRequest}: a valid {@link LiveStatsRequest} plus a non-empty `guestId`. */
+function isGuestProfileRequest(payload) {
+    return (isLiveStatsRequest(payload) && 'guestId' in payload && typeof payload.guestId === 'string' && payload.guestId !== '');
+}
 
 /**
- * Fetches `GET /api/stats` from the backend and validates the response.
+ * Fetches a url and parses the JSON body. The caller validates the payload.
  *
- * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
- * that does not match the contract.
+ * @throws Error with a short description on network failure, timeout, non-2xx status or invalid JSON.
  */
-async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
-    const url = `${apiBaseUrl}/api/stats`;
+async function fetchJson(url, { requestTimeout }, fetchFn = fetch) {
     let response;
     try {
         response = await fetchFn(url, {
@@ -225,13 +263,38 @@ async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
     if (!response.ok) {
         throw new Error(`Request to ${url} failed with status ${response.status}`);
     }
-    let body;
     try {
-        body = await response.json();
+        return await response.json();
     }
     catch (error) {
         throw new Error(`Response from ${url} is not valid JSON`, { cause: error });
     }
+}
+
+/**
+ * Fetches `GET /api/stats/guests/{guestId}` from the backend and validates the response.
+ *
+ * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
+ * that does not match the contract.
+ */
+async function fetchGuestProfile(guestId, { apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+    const url = `${apiBaseUrl}/api/stats/guests/${encodeURIComponent(guestId)}`;
+    const body = await fetchJson(url, { requestTimeout }, fetchFn);
+    if (!isGuestProfileStats(body)) {
+        throw new Error(`Response from ${url} does not match the expected guest profile contract`);
+    }
+    return body;
+}
+
+/**
+ * Fetches `GET /api/stats` from the backend and validates the response.
+ *
+ * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
+ * that does not match the contract.
+ */
+async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+    const url = `${apiBaseUrl}/api/stats`;
+    const body = await fetchJson(url, { requestTimeout }, fetchFn);
     if (!isLiveStats(body)) {
         throw new Error(`Response from ${url} does not match the expected live stats contract`);
     }
@@ -248,15 +311,23 @@ var Backend = NodeHelper.create({
         Log__namespace.debug(`${this.name} is stopped!`);
     },
     socketNotificationReceived(notification, request) {
-        if (notification !== SocketNotification.LIVE_STATS_REQUEST) {
+        if (notification === SocketNotification.LIVE_STATS_REQUEST) {
+            if (!isLiveStatsRequest(request)) {
+                Log__namespace.error(`${this.name} received an invalid live stats request`);
+                return;
+            }
+            void this.loadLiveStats(request.identifier, request.config);
+        }
+        else if (notification === SocketNotification.GUEST_PROFILE_REQUEST) {
+            if (!isGuestProfileRequest(request)) {
+                Log__namespace.error(`${this.name} received an invalid guest profile request`);
+                return;
+            }
+            void this.loadGuestProfile(request.identifier, request.guestId, request.config);
+        }
+        else {
             Log__namespace.error(`${this.name} received unknown socket notification: '${notification}'`);
-            return;
         }
-        if (!isLiveStatsRequest(request)) {
-            Log__namespace.error(`${this.name} received an invalid live stats request`);
-            return;
-        }
-        void this.loadLiveStats(request.identifier, request.config);
     },
     async loadLiveStats(identifier, rawConfig) {
         const config = resolveConfig(rawConfig);
@@ -273,10 +344,30 @@ var Backend = NodeHelper.create({
             this.sendError(identifier, error instanceof Error ? error.message : String(error));
         }
     },
+    async loadGuestProfile(identifier, guestId, rawConfig) {
+        const config = resolveConfig(rawConfig);
+        if (!hasApiBaseUrl(config)) {
+            this.sendGuestProfileError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url');
+            return;
+        }
+        try {
+            const profile = await fetchGuestProfile(guestId, config);
+            const payload = { identifier, guestId, profile };
+            this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload);
+        }
+        catch (error) {
+            this.sendGuestProfileError(identifier, guestId, error instanceof Error ? error.message : String(error));
+        }
+    },
     sendError(identifier, message) {
         Log__namespace.error(`${this.name} could not load live stats: ${message}`);
         const payload = { identifier, message };
         this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload);
+    },
+    sendGuestProfileError(identifier, guestId, message) {
+        Log__namespace.error(`${this.name} could not load guest profile: ${message}`);
+        const payload = { identifier, guestId, message };
+        this.sendSocketNotification(SocketNotification.GUEST_PROFILE_ERROR, payload);
     },
 });
 

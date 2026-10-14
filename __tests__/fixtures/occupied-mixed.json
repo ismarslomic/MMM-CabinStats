@@ -18,14 +18,20 @@
         "currentYear": {
           "totalVisits": 3,
           "totalDays": 9,
+          "totalNights": 6,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         },
         "allTime": {
           "totalVisits": 14,
           "totalDays": 52,
+          "totalNights": 38,
           "visitsRank": 1,
-          "daysRank": 1
+          "daysRank": 1,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         }
       },
       {
@@ -42,14 +48,20 @@
         "currentYear": {
           "totalVisits": 3,
           "totalDays": 9,
+          "totalNights": 6,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         },
         "allTime": {
           "totalVisits": 12,
           "totalDays": 40,
+          "totalNights": 28,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         }
       },
       {
@@ -66,14 +78,20 @@
         "currentYear": {
           "totalVisits": 0,
           "totalDays": 0,
+          "totalNights": 0,
           "visitsRank": null,
-          "daysRank": null
+          "daysRank": null,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         },
         "allTime": {
           "totalVisits": 0,
           "totalDays": 0,
+          "totalNights": 0,
           "visitsRank": null,
-          "daysRank": null
+          "daysRank": null,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         }
       }
     ],
@@ -97,14 +115,20 @@
         "currentYear": {
           "totalVisits": 3,
           "totalDays": 9,
+          "totalNights": 6,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         },
         "allTime": {
           "totalVisits": 14,
           "totalDays": 52,
+          "totalNights": 38,
           "visitsRank": 1,
-          "daysRank": 1
+          "daysRank": 1,
+          "visitsRankAmongGuests": null,
+          "daysRankAmongGuests": null
         }
       },
       {
@@ -121,14 +145,20 @@
         "currentYear": {
           "totalVisits": 3,
           "totalDays": 9,
+          "totalNights": 6,
           "visitsRank": 2,
-          "daysRank": 2
+          "daysRank": 2,
+          "visitsRankAmongGuests": 2,
+          "daysRankAmongGuests": 2
         },
         "allTime": {
           "totalVisits": 4,
           "totalDays": 10,
+          "totalNights": 6,
           "visitsRank": 3,
-          "daysRank": 3
+          "daysRank": 3,
+          "visitsRankAmongGuests": 3,
+          "daysRankAmongGuests": 3
         }
       }
     ],

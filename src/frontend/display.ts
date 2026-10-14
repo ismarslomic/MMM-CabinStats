@@ -1,6 +1,19 @@
 import { NextVisitView, StayView, ViewModel } from './viewModel'
 
-const monthNames = ['jan.', 'feb.', 'mars', 'apr.', 'mai', 'juni', 'juli', 'aug.', 'sep.', 'okt.', 'nov.', 'des.']
+export const monthNames = [
+  'jan.',
+  'feb.',
+  'mars',
+  'apr.',
+  'mai',
+  'juni',
+  'juli',
+  'aug.',
+  'sep.',
+  'okt.',
+  'nov.',
+  'des.',
+]
 
 /** Day of month (1 to 31) and month (1 to 12) of a date. The year is not needed for the short format. */
 type DayAndMonth = { day: number; month: number }

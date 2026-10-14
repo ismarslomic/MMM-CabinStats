@@ -1,7 +1,7 @@
 import { Config, Display, normaliseApiBaseUrl } from '../types/Config'
-import { LiveGuestStats, LiveStats } from '../types/LiveStats'
+import { GuestStats, LiveStats } from '../types/LiveStats'
 import { initials } from './initials'
-import { clampIndex, interleaveGuestFacts } from './rotation'
+import { clampIndex, rotatingGuestFacts } from './rotation'
 
 /**
  * Which view the template renders:
@@ -39,8 +39,6 @@ export type NextVisitView = {
   endDate: string
   daysUntil: number
   guests: GuestView[]
-  /** Highest priority fact about the next visit, `null` when there is none. */
-  fact: string | null
 }
 
 /** Everything the template renders, derived from the stats and the rotation state. Pure data, no formatting. */
@@ -48,9 +46,11 @@ export type ViewModel = {
   view: ViewName
   /** Which parts the template renders, from the `display` option. */
   display: Display
+  /** True when the avatars are tappable and open the guest view, from the `guestView` option. */
+  guestView: boolean
   stay: StayView | null
   guests: GuestView[]
-  /** Current guest fact in the rotation, `null` when there is none. Only set for the `occupied` view. */
+  /** Current guest fact in the rotation, `null` when there is none. About the current guests, or the next visit's guests when not occupied. */
   guestFact: string | null
   /** Current cabin fact in the rotation, `null` when there is none or `showCabinFacts` is off. */
   cabinFact: string | null
@@ -72,6 +72,7 @@ export type ViewModelInput = {
 const emptyViewModel = (view: ViewName, display: Display, animationSpeed: number): ViewModel => ({
   view,
   display,
+  guestView: false,
   stay: null,
   guests: [],
   guestFact: null,
@@ -87,7 +88,7 @@ export function avatarUrlFor(apiBaseUrl: string | undefined, avatarUrl: string |
   return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
 }
 
-function toGuestView(guest: LiveGuestStats, apiBaseUrl: string | undefined): GuestView {
+function toGuestView(guest: GuestStats, apiBaseUrl: string | undefined): GuestView {
   return {
     guestId: guest.guestId,
     firstName: guest.firstName,
@@ -108,12 +109,13 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
 
   const current = liveStats.isOccupied ? liveStats.currentReservation : null
   const next = config.showNextVisit ? liveStats.nextReservation : null
-  const guestFacts = current && display !== 'stats' ? interleaveGuestFacts(liveStats.guestFunFacts) : []
+  const guestFacts = display !== 'stats' ? rotatingGuestFacts(liveStats, config.showNextVisit) : []
   const cabinFacts = config.showCabinFacts && display !== 'stats' ? liveStats.cabinFunFacts : []
 
   return {
     view: current ? 'occupied' : 'compact',
     display,
+    guestView: config.guestView,
     stay: current
       ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
       : null,
@@ -126,7 +128,6 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
           endDate: next.endDate,
           daysUntil: next.daysUntil,
           guests: next.guests.map((guest) => toGuestView(guest, apiBaseUrl)),
-          fact: liveStats.nextVisitFunFacts[0]?.text ?? null,
         }
       : null,
     totals: {

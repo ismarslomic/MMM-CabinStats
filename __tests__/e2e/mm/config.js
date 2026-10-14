@@ -1,7 +1,7 @@
 const mockBackend = 'http://127.0.0.1:8081'
 
 // Fast timers so the specs do not wait for the production defaults (10 minutes polling, 18 s rotation).
-const fast = { animationSpeed: 0, guestFactInterval: 1000, cabinFactInterval: 1000 }
+const fast = { animationSpeed: 0, guestFactInterval: 1000, cabinFactInterval: 1000, guestViewFactInterval: 1000 }
 
 const config = {
   address: '127.0.0.1',
@@ -29,7 +29,7 @@ const config = {
     {
       module: 'MMM-CabinStats',
       position: 'bottom_left',
-      config: { ...fast, apiBaseUrl: `${mockBackend}/guest-without-avatar` },
+      config: { ...fast, apiBaseUrl: `${mockBackend}/guest-without-avatar`, guestViewTimeout: 2000 },
     },
     {
       module: 'MMM-CabinStats',

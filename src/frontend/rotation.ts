@@ -1,4 +1,4 @@
-import { FunFact } from '../types/LiveStats'
+import { FunFact, LiveStats } from '../types/LiveStats'
 
 /**
  * Orders guest facts for rotation: round-robin between the guests, so every guest gets a turn before anyone gets a
@@ -23,6 +23,16 @@ export function interleaveGuestFacts(facts: readonly FunFact[]): FunFact[] {
     }
   }
   return result
+}
+
+/**
+ * The guest facts that rotate right now: about the current guests while the cabin is occupied, otherwise about the next
+ * visit (only when it is shown). Same order rules in both cases, see `interleaveGuestFacts`.
+ */
+export function rotatingGuestFacts(liveStats: LiveStats, showNextVisit: boolean): FunFact[] {
+  if (liveStats.isOccupied && liveStats.currentReservation) return interleaveGuestFacts(liveStats.guestFunFacts)
+  if (showNextVisit && liveStats.nextReservation) return interleaveGuestFacts(liveStats.nextVisitFunFacts)
+  return []
 }
 
 /** Index of the next fact, wrapping around. `0` for an empty list. */

@@ -5,7 +5,15 @@ import NodeHelper from 'node_helper'
 import * as Log from 'logger'
 import { SocketNotification } from '../constants/SocketNotifications'
 import { hasApiBaseUrl, resolveConfig } from '../types/Config'
-import { LiveStatsError, LiveStatsResponse, isLiveStatsRequest } from '../types/Messages'
+import {
+  GuestProfileError,
+  GuestProfileResponse,
+  LiveStatsError,
+  LiveStatsResponse,
+  isGuestProfileRequest,
+  isLiveStatsRequest,
+} from '../types/Messages'
+import { fetchGuestProfile } from './fetchGuestProfile'
 import { fetchLiveStats } from './fetchLiveStats'
 
 export default NodeHelper.create({
@@ -18,15 +26,21 @@ export default NodeHelper.create({
   },
 
   socketNotificationReceived(notification: string, request: unknown): void {
-    if (notification !== SocketNotification.LIVE_STATS_REQUEST) {
+    if (notification === SocketNotification.LIVE_STATS_REQUEST) {
+      if (!isLiveStatsRequest(request)) {
+        Log.error(`${this.name} received an invalid live stats request`)
+        return
+      }
+      void this.loadLiveStats(request.identifier, request.config)
+    } else if (notification === SocketNotification.GUEST_PROFILE_REQUEST) {
+      if (!isGuestProfileRequest(request)) {
+        Log.error(`${this.name} received an invalid guest profile request`)
+        return
+      }
+      void this.loadGuestProfile(request.identifier, request.guestId, request.config)
+    } else {
       Log.error(`${this.name} received unknown socket notification: '${notification}'`)
-      return
     }
-    if (!isLiveStatsRequest(request)) {
-      Log.error(`${this.name} received an invalid live stats request`)
-      return
-    }
-    void this.loadLiveStats(request.identifier, request.config)
   },
 
   async loadLiveStats(identifier: string, rawConfig: unknown): Promise<void> {
@@ -44,9 +58,30 @@ export default NodeHelper.create({
     }
   },
 
+  async loadGuestProfile(identifier: string, guestId: string, rawConfig: unknown): Promise<void> {
+    const config = resolveConfig(rawConfig)
+    if (!hasApiBaseUrl(config)) {
+      this.sendGuestProfileError(identifier, guestId, 'apiBaseUrl is missing or not a valid http(s) url')
+      return
+    }
+    try {
+      const profile = await fetchGuestProfile(guestId, config)
+      const payload: GuestProfileResponse = { identifier, guestId, profile }
+      this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload)
+    } catch (error) {
+      this.sendGuestProfileError(identifier, guestId, error instanceof Error ? error.message : String(error))
+    }
+  },
+
   sendError(identifier: string, message: string): void {
     Log.error(`${this.name} could not load live stats: ${message}`)
     const payload: LiveStatsError = { identifier, message }
     this.sendSocketNotification(SocketNotification.LIVE_STATS_ERROR, payload)
+  },
+
+  sendGuestProfileError(identifier: string, guestId: string, message: string): void {
+    Log.error(`${this.name} could not load guest profile: ${message}`)
+    const payload: GuestProfileError = { identifier, guestId, message }
+    this.sendSocketNotification(SocketNotification.GUEST_PROFILE_ERROR, payload)
   },
 })

@@ -1,4 +1,5 @@
 import type { components } from './api.generated'
+import { isArrayOf, isIsoDate, isNumber, isOptional, isRecord, isString } from './guards'
 
 /** Response of the backend `GET /api/stats`, generated from the OpenAPI spec. */
 export type LiveStats = components['schemas']['LiveStats']
@@ -7,55 +8,27 @@ export type CurrentReservationInfo = components['schemas']['CurrentReservationIn
 /** Next upcoming reservation, `null` when there is none. */
 export type NextReservationInfo = components['schemas']['NextReservationInfo']
 /** Visit statistics and flags for one guest of a reservation. */
-export type LiveGuestStats = components['schemas']['LiveGuestStats']
+export type GuestStats = components['schemas']['GuestStats']
 /** Guest visit statistics for one period (the current year or all years). */
 export type GuestPeriodStats = components['schemas']['GuestPeriodStats']
 /** Ready-to-display fun fact about a guest, the group or the cabin. */
 export type FunFact = components['schemas']['FunFact']
-
-type UnknownRecord = Record<string, unknown>
-
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function isNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
-}
-
-function isString(value: unknown): value is string {
-  return typeof value === 'string'
-}
-
-/** `YYYY-MM-DD` that is also a real calendar date (rejects `2026-02-31`). */
-function isIsoDate(value: unknown): value is string {
-  if (!isString(value) || !ISO_DATE.test(value)) return false
-  const date = new Date(`${value}T00:00:00Z`)
-  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value)
-}
-
-/** The backend sends explicit `null` for absent values, but the spec leaves them out of `required`. */
-function isOptional(value: unknown, isValid: (value: unknown) => boolean): boolean {
-  return value === undefined || value === null || isValid(value)
-}
-
-function isArrayOf(value: unknown, isValid: (item: unknown) => boolean): boolean {
-  return Array.isArray(value) && value.every(isValid)
-}
 
 function isGuestPeriodStats(value: unknown): value is GuestPeriodStats {
   return (
     isRecord(value) &&
     isNumber(value.totalVisits) &&
     isNumber(value.totalDays) &&
+    isNumber(value.totalNights) &&
     isOptional(value.visitsRank, isNumber) &&
-    isOptional(value.daysRank, isNumber)
+    isOptional(value.daysRank, isNumber) &&
+    isOptional(value.visitsRankAmongGuests, isNumber) &&
+    isOptional(value.daysRankAmongGuests, isNumber)
   )
 }
 
-function isLiveGuestStats(value: unknown): value is LiveGuestStats {
+/** Type guard for {@link GuestStats}. */
+export function isGuestStats(value: unknown): value is GuestStats {
   return (
     isRecord(value) &&
     isString(value.guestId) &&
@@ -78,7 +51,7 @@ function isCurrentReservation(value: unknown): boolean {
     isRecord(value) &&
     isIsoDate(value.startDate) &&
     isIsoDate(value.endDate) &&
-    isArrayOf(value.guests, isLiveGuestStats) &&
+    isArrayOf(value.guests, isGuestStats) &&
     isNumber(value.remainingNights)
   )
 }
@@ -88,12 +61,13 @@ function isNextReservation(value: unknown): boolean {
     isRecord(value) &&
     isIsoDate(value.startDate) &&
     isIsoDate(value.endDate) &&
-    isArrayOf(value.guests, isLiveGuestStats) &&
+    isArrayOf(value.guests, isGuestStats) &&
     isNumber(value.daysUntil)
   )
 }
 
-function isFunFact(value: unknown): value is FunFact {
+/** Type guard for {@link FunFact}. */
+export function isFunFact(value: unknown): value is FunFact {
   return isRecord(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority)
 }
 
