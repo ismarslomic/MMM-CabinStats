@@ -48,7 +48,7 @@
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-typescript": "^12.3.0",
     "@types/magicmirror-module": "^2.16.6",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/nunjucks": "^3.2.6",
     "@vitest/coverage-v8": "^5.0.3",
     "eslint": "^10.10.0",
