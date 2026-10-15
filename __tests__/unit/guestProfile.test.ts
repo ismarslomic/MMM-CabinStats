@@ -147,7 +147,7 @@ describe('buildProfileModel', () => {
   })
 
   test('keeps the fun facts in the order of the backend', () => {
-    expect(model(regular).facts).toEqual(regular.funFacts.map((fact) => fact.text))
+    expect(model(regular).facts.map((fact) => fact.text)).toEqual(regular.funFacts.map((fact) => fact.text))
   })
 
   test('has no tiles, dates or facts for a guest without visits', () => {

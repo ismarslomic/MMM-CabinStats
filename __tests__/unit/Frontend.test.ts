@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FrontendModule } from '../../src/types/FrontendModule'
 import { defaultConfig } from '../../src/types/Config'
+import { toFactView } from '../../src/frontend/factView'
 import { MM2ModuleHelper } from './mocks/module'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
 import notOccupiedNext from '../fixtures/not-occupied-next.json'
@@ -257,24 +258,24 @@ describe('Frontend', () => {
       const { implementation } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall, options)
       implementation.start()
       implementation.socketNotificationReceived('LIVE_STATS_RESPONSE', response(occupiedMixed))
-      expect(implementation.getTemplateData().guestFact).toBe('Anna har vært på hytta flest ganger.')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Anna har vært på hytta flest ganger.')
       vi.advanceTimersByTime(10_000)
-      expect(implementation.getTemplateData().guestFact).toBe('Dette er Carls første besøk!')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Dette er Carls første besøk!')
       vi.advanceTimersByTime(10_000)
-      expect(implementation.getTemplateData().guestFact).toBe('Gjengen har vært samlet 5 ganger.')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Gjengen har vært samlet 5 ganger.')
       vi.advanceTimersByTime(10_000)
-      expect(implementation.getTemplateData().guestFact).toBe('Anna har vært på hytta flest ganger.')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Anna har vært på hytta flest ganger.')
     })
 
     it('rotates the cabin facts independently on their own interval', () => {
       const { implementation } = checkAndExtractRegistration(mockModuleRegister.mock.lastCall, options)
       implementation.start()
       implementation.socketNotificationReceived('LIVE_STATS_RESPONSE', response(occupiedMixed))
-      expect(implementation.getTemplateData().cabinFact).toBe('Hytta har vært besøkt 120 ganger.')
+      expect(implementation.getTemplateData().cabinFact?.text).toBe('Hytta har vært besøkt 120 ganger.')
       vi.advanceTimersByTime(30_000)
-      expect(implementation.getTemplateData().cabinFact).toBe('Det er 300 netter totalt.')
+      expect(implementation.getTemplateData().cabinFact?.text).toBe('Det er 300 netter totalt.')
       vi.advanceTimersByTime(30_000)
-      expect(implementation.getTemplateData().cabinFact).toBe('Hytta har vært besøkt 120 ganger.')
+      expect(implementation.getTemplateData().cabinFact?.text).toBe('Hytta har vært besøkt 120 ganger.')
     })
 
     it('does not re-render when there is at most one fact', () => {
@@ -322,20 +323,20 @@ describe('Frontend', () => {
       implementation.start()
       implementation.socketNotificationReceived('LIVE_STATS_RESPONSE', response(occupiedMixed))
       vi.advanceTimersByTime(20_000)
-      expect(implementation.getTemplateData().guestFact).toBe('Gjengen har vært samlet 5 ganger.')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Gjengen har vært samlet 5 ganger.')
 
       vi.advanceTimersByTime(5_000)
       implementation.socketNotificationReceived(
         'LIVE_STATS_RESPONSE',
         response({ ...occupiedMixed, guestFunFacts: occupiedMixed.guestFunFacts.slice(0, 2) })
       )
-      expect(implementation.getTemplateData().guestFact).toBe('Dette er Carls første besøk!')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Dette er Carls første besøk!')
       // The timers restarted with the new data: still 3 timers, and the next rotation is a full interval away.
       expect(vi.getTimerCount()).toBe(3)
       vi.advanceTimersByTime(9_999)
-      expect(implementation.getTemplateData().guestFact).toBe('Dette er Carls første besøk!')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Dette er Carls første besøk!')
       vi.advanceTimersByTime(1)
-      expect(implementation.getTemplateData().guestFact).toBe('Anna har vært på hytta flest ganger.')
+      expect(implementation.getTemplateData().guestFact?.text).toBe('Anna har vært på hytta flest ganger.')
     })
 
     it('stops rotating on suspend when pauseWhenHidden is set and resumes with one set of timers', () => {
@@ -456,7 +457,7 @@ describe('Frontend', () => {
       const module = loaded()
       module.openGuestView('guest-1')
       module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
-      expect(lastModel().profile).toMatchObject({ totalVisits: 125, facts: guestProfile.funFacts.map((f) => f.text) })
+      expect(lastModel().profile).toMatchObject({ totalVisits: 125, facts: guestProfile.funFacts.map(toFactView) })
     })
 
     describe('fun fact rotation', () => {
@@ -466,7 +467,7 @@ describe('Frontend', () => {
         module.socketNotificationReceived('GUEST_PROFILE_RESPONSE', guestResponse())
         return module
       }
-      const facts = guestProfile.funFacts.map((fact) => fact.text)
+      const facts = guestProfile.funFacts.map(toFactView)
 
       it('shows the next fact on every interval without re-rendering the view', () => {
         open()

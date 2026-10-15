@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { avatarUrlFor, buildViewModel, ViewModelInput } from '../../src/frontend/viewModel'
 import { defaultConfig } from '../../src/types/Config'
-import { LiveStats } from '../../src/types/LiveStats'
+import { FunFact, LiveStats } from '../../src/types/LiveStats'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
 import occupiedFamilyOnly from '../fixtures/occupied-family-only.json'
 import notOccupiedNext from '../fixtures/not-occupied-next.json'
@@ -93,13 +93,13 @@ describe('buildViewModel', () => {
 
     test('selects the guest fact by index in the interleaved order', () => {
       // Facts are for guest-1, guest-3 and the group, so the order stays the same.
-      expect(build(occupiedMixed, { guestFactIndex: 0 }).guestFact).toBe('Anna har vært på hytta flest ganger.')
-      expect(build(occupiedMixed, { guestFactIndex: 1 }).guestFact).toBe('Dette er Carls første besøk!')
-      expect(build(occupiedMixed, { guestFactIndex: 2 }).guestFact).toBe('Gjengen har vært samlet 5 ganger.')
+      expect(build(occupiedMixed, { guestFactIndex: 0 }).guestFact?.text).toBe('Anna har vært på hytta flest ganger.')
+      expect(build(occupiedMixed, { guestFactIndex: 1 }).guestFact?.text).toBe('Dette er Carls første besøk!')
+      expect(build(occupiedMixed, { guestFactIndex: 2 }).guestFact?.text).toBe('Gjengen har vært samlet 5 ganger.')
     })
 
     test('clamps an out-of-range index', () => {
-      expect(build(occupiedMixed, { guestFactIndex: 99 }).guestFact).toBe('Gjengen har vært samlet 5 ganger.')
+      expect(build(occupiedMixed, { guestFactIndex: 99 }).guestFact?.text).toBe('Gjengen har vært samlet 5 ganger.')
     })
 
     test('has no guest fact when the list is empty', () => {
@@ -110,13 +110,13 @@ describe('buildViewModel', () => {
       const model = build(occupiedFamilyOnly)
       expect(model.guests.map((g) => g.guestId)).toEqual(['guest-1', 'guest-2'])
       expect(model.nextVisit).toBeNull()
-      expect(model.cabinFact).toBe('Hytta har vært besøkt 120 ganger.')
+      expect(model.cabinFact?.text).toBe('Hytta har vært besøkt 120 ganger.')
     })
 
     test('is compact when flagged occupied but the reservation is missing', () => {
       const model = build({ ...occupiedMixed, currentReservation: null })
       expect(model.view).toBe('compact')
-      expect(model.guestFact).toBe('Neste besøk er om 14 dager.')
+      expect(model.guestFact?.text).toBe('Neste besøk er om 14 dager.')
     })
   })
 
@@ -146,7 +146,7 @@ describe('buildViewModel', () => {
       expect(model.view).toBe('compact')
       expect(model.stay).toBeNull()
       expect(model.guests).toEqual([])
-      expect(model.guestFact).toBe('Dora kommer tilbake etter 8 måneder.')
+      expect(model.guestFact?.text).toBe('Dora kommer tilbake etter 8 måneder.')
       expect(model.nextVisit?.daysUntil).toBe(14)
       expect(model.totals).toEqual({ visits: 120, nights: 300, uniqueGuests: 25 })
     })
@@ -158,10 +158,51 @@ describe('buildViewModel', () => {
         { guestId: null, text: 'g1', priority: 1 },
       ]
       const stats = { ...notOccupiedNext, nextVisitFunFacts }
-      expect(build(stats, { guestFactIndex: 0 }).guestFact).toBe('a1')
-      expect(build(stats, { guestFactIndex: 1 }).guestFact).toBe('g1')
-      expect(build(stats, { guestFactIndex: 2 }).guestFact).toBe('a2')
-      expect(build(stats, { guestFactIndex: 99 }).guestFact).toBe('a2')
+      expect(build(stats, { guestFactIndex: 0 }).guestFact?.text).toBe('a1')
+      expect(build(stats, { guestFactIndex: 1 }).guestFact?.text).toBe('g1')
+      expect(build(stats, { guestFactIndex: 2 }).guestFact?.text).toBe('a2')
+      expect(build(stats, { guestFactIndex: 99 }).guestFact?.text).toBe('a2')
+    })
+
+    test('gives the guest and cabin facts with the parts to highlight', () => {
+      const guestFunFacts: FunFact[] = [
+        {
+          guestId: 'guest-3',
+          text: 'Dette er Carls første besøk!',
+          priority: 80,
+          segments: [
+            { text: 'Dette er ' },
+            { text: 'Carl', kind: 'guest' },
+            { text: 's ' },
+            { text: 'første besøk', kind: 'stat' },
+            { text: '!' },
+          ],
+        },
+      ]
+      const cabinFunFacts: FunFact[] = [
+        {
+          guestId: null,
+          text: 'Hytta har vært besøkt 120 ganger.',
+          priority: 60,
+          segments: [{ text: 'Hytta har vært besøkt ' }, { text: '120 ganger', kind: 'stat' }, { text: '.' }],
+        },
+      ]
+      const model = build({ ...occupiedMixed, guestFunFacts, cabinFunFacts })
+      expect(model.guestFact?.segments).toEqual([
+        { text: 'Dette er ', kind: 'text' },
+        { text: 'Carl', kind: 'guest' },
+        { text: 's ', kind: 'text' },
+        { text: 'første besøk', kind: 'stat' },
+        { text: '!', kind: 'text' },
+      ])
+      expect(model.cabinFact?.segments.map((s) => s.kind)).toEqual(['text', 'stat', 'text'])
+    })
+
+    test('shows a fact without segments as one plain part', () => {
+      expect(build(occupiedMixed, { guestFactIndex: 0 }).guestFact).toEqual({
+        text: 'Anna har vært på hytta flest ganger.',
+        segments: [{ text: 'Anna har vært på hytta flest ganger.', kind: 'text' }],
+      })
     })
 
     test('has no guest fact when showNextVisit is off', () => {
@@ -180,8 +221,8 @@ describe('buildViewModel', () => {
 
   describe('cabin facts', () => {
     test('selects by index and clamps', () => {
-      expect(build(occupiedMixed, { cabinFactIndex: 1 }).cabinFact).toBe('Det er 300 netter totalt.')
-      expect(build(occupiedMixed, { cabinFactIndex: 7 }).cabinFact).toBe('Det er 300 netter totalt.')
+      expect(build(occupiedMixed, { cabinFactIndex: 1 }).cabinFact?.text).toBe('Det er 300 netter totalt.')
+      expect(build(occupiedMixed, { cabinFactIndex: 7 }).cabinFact?.text).toBe('Det er 300 netter totalt.')
     })
 
     test('are both hidden for display stats, the rest is kept', () => {

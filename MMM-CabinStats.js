@@ -186,9 +186,17 @@
             isArrayOf(value.guests, isGuestStats) &&
             isNumber(value.daysUntil));
     }
+    /** Type guard for {@link FactSegment}. Any string is accepted as `kind`: the backend may add kinds later. */
+    function isFactSegment(value) {
+        return isRecord$1(value) && isString(value.text) && isOptional(value.kind, isString);
+    }
     /** Type guard for {@link FunFact}. */
     function isFunFact(value) {
-        return isRecord$1(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority);
+        return (isRecord$1(value) &&
+            isOptional(value.guestId, isString) &&
+            isString(value.text) &&
+            isNumber(value.priority) &&
+            isOptional(value.segments, (segments) => isArrayOf(segments, isFactSegment)));
     }
     /**
      * Type guard for {@link LiveStats}. The payload crosses a runtime boundary (backend response), which TypeScript
@@ -256,6 +264,21 @@
             typeof payload.identifier === 'string' &&
             typeof payload.guestId === 'string' &&
             typeof payload.message === 'string');
+    }
+
+    function kindOf(kind) {
+        return kind === 'stat' || kind === 'guest' ? kind : 'text';
+    }
+    /**
+     * The parts to highlight in a fact. The backend sends `segments` that joined together equal `text`. An older backend,
+     * or a hand-built fact, has none: the whole text is then one plain part. A kind other than `stat` or `guest` is shown
+     * as plain text, because the backend may add kinds later.
+     */
+    function toFactView(fact) {
+        const segments = fact.segments?.length
+            ? fact.segments.map(({ text, kind }) => ({ text, kind: kindOf(kind) }))
+            : [{ text: fact.text, kind: 'text' }];
+        return { text: fact.text, segments };
     }
 
     /**
@@ -334,6 +357,11 @@
             return null;
         return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`;
     }
+    /** The fact at the index, which is clamped into the list. `null` when the list is empty. */
+    function factAt(facts, index) {
+        const fact = facts[clampIndex(index, facts.length)];
+        return fact ? toFactView(fact) : null;
+    }
     function toGuestView(guest, apiBaseUrl) {
         return {
             guestId: guest.guestId,
@@ -365,8 +393,8 @@
                 ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
                 : null,
             guests: current ? current.guests.map((guest) => toGuestView(guest, apiBaseUrl)) : [],
-            guestFact: guestFacts[clampIndex(guestFactIndex, guestFacts.length)]?.text ?? null,
-            cabinFact: cabinFacts[clampIndex(cabinFactIndex, cabinFacts.length)]?.text ?? null,
+            guestFact: factAt(guestFacts, guestFactIndex),
+            cabinFact: factAt(cabinFacts, cabinFactIndex),
             nextVisit: next
                 ? {
                     startDate: next.startDate,
@@ -578,7 +606,7 @@
             secondaryTiles: secondaryTiles(profile),
             firstVisit: firstVisitDate ? formatMonthYear(firstVisitDate) : null,
             lastVisit: lastVisitDate ? formatFullDate(lastVisitDate) : null,
-            facts: profile.funFacts.map((fact) => fact.text),
+            facts: profile.funFacts.map(toFactView),
         };
     }
 
@@ -625,15 +653,23 @@
         return overlay;
     }
     /** Shows another fun fact in an open guest view with a fade, without rebuilding anything else. */
-    function updateGuestOverlayFact(overlay, text) {
-        const fact = overlay.querySelector('.cabin-profile-fact');
-        if (!fact)
+    function updateGuestOverlayFact(overlay, fact) {
+        const element = overlay.querySelector('.cabin-profile-fact');
+        if (!element)
             return;
-        fact.classList.remove('cabin-fade-in');
+        element.classList.remove('cabin-fade-in');
         // Reading a layout property restarts the CSS animation.
-        void fact.offsetWidth;
-        fact.textContent = text;
-        fact.classList.add('cabin-fade-in');
+        void element.offsetWidth;
+        // Text nodes and `textContent` only: the texts come from the backend and must not be parsed as html.
+        element.replaceChildren(...fact.segments.map(({ text, kind }) => {
+            if (kind === 'text')
+                return document.createTextNode(text);
+            const span = document.createElement('span');
+            span.className = `cabin-highlight cabin-highlight-${kind}`;
+            span.textContent = text;
+            return span;
+        }));
+        element.classList.add('cabin-fade-in');
     }
 
     const frontendModule = {
@@ -928,7 +964,7 @@
             if (!guestView || !facts || facts.length <= 1 || !this.guestOverlay)
                 return;
             guestView.factIndex = nextIndex(guestView.factIndex, facts.length);
-            updateGuestOverlayFact(this.guestOverlay, facts[guestView.factIndex].text);
+            updateGuestOverlayFact(this.guestOverlay, toFactView(facts[guestView.factIndex]));
         },
         loadData() {
             const config = resolveConfig(this.config);

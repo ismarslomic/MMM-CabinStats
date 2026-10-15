@@ -184,9 +184,17 @@ function isNextReservation(value) {
         isArrayOf(value.guests, isGuestStats) &&
         isNumber(value.daysUntil));
 }
+/** Type guard for {@link FactSegment}. Any string is accepted as `kind`: the backend may add kinds later. */
+function isFactSegment(value) {
+    return isRecord$1(value) && isString(value.text) && isOptional(value.kind, isString);
+}
 /** Type guard for {@link FunFact}. */
 function isFunFact(value) {
-    return isRecord$1(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority);
+    return (isRecord$1(value) &&
+        isOptional(value.guestId, isString) &&
+        isString(value.text) &&
+        isNumber(value.priority) &&
+        isOptional(value.segments, (segments) => isArrayOf(segments, isFactSegment)));
 }
 /**
  * Type guard for {@link LiveStats}. The payload crosses a runtime boundary (backend response), which TypeScript

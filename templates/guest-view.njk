@@ -4,6 +4,9 @@
   Names from the backend are escaped before they go through `translate`, which marks its result as safe.
   Do not use elements that MagicMirror styles globally, like `header` (upper case, small line height, border).
 #}
+{# Same as in MMM-CabinStats.njk: numbers and guest names of a fact are highlighted. Keep this on one line. #}
+{% macro factText(fact) %}{% for part in fact.segments %}{% if part.kind == 'text' %}{{ part.text }}{% else %}<span class="cabin-highlight cabin-highlight-{{ part.kind }}">{{ part.text }}</span>{% endif %}{% endfor %}{% endmacro %}
+
 {% macro month(number) %}{{ ('MONTH_SHORT_' + number) | translate }}{% endmacro %}
 
 {% macro cellLabel(cell, year) %}
@@ -25,7 +28,7 @@
     <h2 class="cabin-overlay-name bright">
       {% if profile and profile.rank %}<span class="cabin-overlay-rank{% if profile.rank.accent %} cabin-overlay-rank-first{% endif %}">{{ profile.rank.value }}</span> {% endif %}{{ fullName }}
     </h2>
-    {% if profile and profile.facts.length %}<p class="cabin-profile-fact bright">{{ profile.facts[factIndex] or profile.facts[0] }}</p>{% endif %}
+    {% if profile and profile.facts.length %}<p class="cabin-profile-fact bright">{{ factText(profile.facts[factIndex] or profile.facts[0]) }}</p>{% endif %}
   </div>
 
   <div class="cabin-overlay-body">

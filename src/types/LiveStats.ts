@@ -13,6 +13,8 @@ export type GuestStats = components['schemas']['GuestStats']
 export type GuestPeriodStats = components['schemas']['GuestPeriodStats']
 /** Ready-to-display fun fact about a guest, the group or the cabin. */
 export type FunFact = components['schemas']['FunFact']
+/** A part of a {@link FunFact} text, so the part can be highlighted. */
+export type FactSegment = components['schemas']['FactSegment']
 
 function isGuestPeriodStats(value: unknown): value is GuestPeriodStats {
   return (
@@ -66,9 +68,20 @@ function isNextReservation(value: unknown): boolean {
   )
 }
 
+/** Type guard for {@link FactSegment}. Any string is accepted as `kind`: the backend may add kinds later. */
+export function isFactSegment(value: unknown): value is FactSegment {
+  return isRecord(value) && isString(value.text) && isOptional(value.kind, isString)
+}
+
 /** Type guard for {@link FunFact}. */
 export function isFunFact(value: unknown): value is FunFact {
-  return isRecord(value) && isOptional(value.guestId, isString) && isString(value.text) && isNumber(value.priority)
+  return (
+    isRecord(value) &&
+    isOptional(value.guestId, isString) &&
+    isString(value.text) &&
+    isNumber(value.priority) &&
+    isOptional(value.segments, (segments) => isArrayOf(segments, isFactSegment))
+  )
 }
 
 /**

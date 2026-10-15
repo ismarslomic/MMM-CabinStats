@@ -38,17 +38,20 @@
 </li>
 {% endmacro %}
 
+{# The parts of a fact: numbers and guest names are highlighted. The parts hold their own spaces, so keep this on one line. #}
+{% macro factText(fact) %}{% for part in fact.segments %}{% if part.kind == 'text' %}{{ part.text }}{% else %}<span class="cabin-highlight cabin-highlight-{{ part.kind }}">{{ part.text }}</span>{% endif %}{% endfor %}{% endmacro %}
+
 {# Fun fact about the guests, shown the same way in the occupied and compact views. #}
-{% macro guestFactLine(text) %}
-{% if text %}
-<p class="cabin-fact cabin-fact-guest medium light bright">{{ text }}</p>
+{% macro guestFactLine(fact) %}
+{% if fact %}
+<p class="cabin-fact cabin-fact-guest medium light bright">{{ factText(fact) }}</p>
 {% endif %}
 {% endmacro %}
 
 {# Fun fact about the cabin, shown the same way in the occupied and compact views. #}
-{% macro cabinFactLine(text) %}
-{% if text %}
-<p class="cabin-fact cabin-fact-cabin small light dimmed">{{ text }}</p>
+{% macro cabinFactLine(fact) %}
+{% if fact %}
+<p class="cabin-fact cabin-fact-cabin small light dimmed">{{ factText(fact) }}</p>
 {% endif %}
 {% endmacro %}
 
@@ -67,10 +70,10 @@
   {% if guestFact or cabinFact %}
   <section class="cabin-stats cabin-stats-facts" aria-label="{{ 'REGION_LABEL' | translate }}">
     {% if guestFact %}
-    <p class="cabin-fact cabin-fact-guest thin xlarge bright">{{ guestFact }}</p>
+    <p class="cabin-fact cabin-fact-guest thin xlarge bright">{{ factText(guestFact) }}</p>
     {% endif %}
     {% if cabinFact %}
-    <p class="cabin-fact cabin-fact-cabin thin large bright">{{ cabinFact }}</p>
+    <p class="cabin-fact cabin-fact-cabin thin large bright">{{ factText(cabinFact) }}</p>
     {% endif %}
   </section>
   {% endif %}

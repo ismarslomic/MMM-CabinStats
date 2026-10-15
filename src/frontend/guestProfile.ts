@@ -1,5 +1,6 @@
 import { GuestProfileStats, GuestVisit } from '../types/GuestProfileStats'
 import { monthNames } from './display'
+import { FactView, toFactView } from './factView'
 
 /** First year of the heatmap. The backend data starts in September 2020, so every guest gets the same grid. */
 export const heatmapStartYear = 2020
@@ -67,7 +68,7 @@ export type ProfileModel = {
   /** Last visit as `5. okt. 2025`, `null` without a completed visit. */
   lastVisit: string | null
   /** Ready-to-display fun facts in the order the backend sent them (highest priority first). */
-  facts: string[]
+  facts: FactView[]
 }
 
 function levelOf(count: number): HeatmapCell['level'] {
@@ -180,6 +181,6 @@ export function buildProfileModel(profile: GuestProfileStats, today: YearMonth):
     secondaryTiles: secondaryTiles(profile),
     firstVisit: firstVisitDate ? formatMonthYear(firstVisitDate) : null,
     lastVisit: lastVisitDate ? formatFullDate(lastVisitDate) : null,
-    facts: profile.funFacts.map((fact) => fact.text),
+    facts: profile.funFacts.map(toFactView),
   }
 }
