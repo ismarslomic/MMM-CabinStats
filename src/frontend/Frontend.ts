@@ -14,6 +14,7 @@ import { buildViewModel } from './viewModel'
 import { TemplateData, toTemplateData } from './display'
 import { clampIndex, nextIndex, rotatingGuestFacts } from './rotation'
 import { buildGuestOverlayModel, findGuest } from './guestView'
+import { toFactView } from './factView'
 import { createGuestOverlay, updateGuestOverlayFact } from './guestOverlay'
 import { yearMonthOf } from './guestProfile'
 import { GuestProfileStats } from '../types/GuestProfileStats'
@@ -330,7 +331,7 @@ const frontendModule: Omit<
     const facts = guestView?.profile?.funFacts
     if (!guestView || !facts || facts.length <= 1 || !this.guestOverlay) return
     guestView.factIndex = nextIndex(guestView.factIndex, facts.length)
-    updateGuestOverlayFact(this.guestOverlay, facts[guestView.factIndex].text)
+    updateGuestOverlayFact(this.guestOverlay, toFactView(facts[guestView.factIndex]))
   },
 
   loadData(): void {

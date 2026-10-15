@@ -1,5 +1,6 @@
 import { Config, Display, normaliseApiBaseUrl } from '../types/Config'
-import { GuestStats, LiveStats } from '../types/LiveStats'
+import { FunFact, GuestStats, LiveStats } from '../types/LiveStats'
+import { FactView, toFactView } from './factView'
 import { initials } from './initials'
 import { clampIndex, rotatingGuestFacts } from './rotation'
 
@@ -51,9 +52,9 @@ export type ViewModel = {
   stay: StayView | null
   guests: GuestView[]
   /** Current guest fact in the rotation, `null` when there is none. About the current guests, or the next visit's guests when not occupied. */
-  guestFact: string | null
+  guestFact: FactView | null
   /** Current cabin fact in the rotation, `null` when there is none or `showCabinFacts` is off. */
-  cabinFact: string | null
+  cabinFact: FactView | null
   nextVisit: NextVisitView | null
   totals: { visits: number; nights: number; uniqueGuests: number } | null
   /** Animation speed in milliseconds for `updateDom`. */
@@ -88,6 +89,12 @@ export function avatarUrlFor(apiBaseUrl: string | undefined, avatarUrl: string |
   return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
 }
 
+/** The fact at the index, which is clamped into the list. `null` when the list is empty. */
+function factAt(facts: readonly FunFact[], index: number): FactView | null {
+  const fact = facts[clampIndex(index, facts.length)]
+  return fact ? toFactView(fact) : null
+}
+
 function toGuestView(guest: GuestStats, apiBaseUrl: string | undefined): GuestView {
   return {
     guestId: guest.guestId,
@@ -120,8 +127,8 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
       ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
       : null,
     guests: current ? current.guests.map((guest) => toGuestView(guest, apiBaseUrl)) : [],
-    guestFact: guestFacts[clampIndex(guestFactIndex, guestFacts.length)]?.text ?? null,
-    cabinFact: cabinFacts[clampIndex(cabinFactIndex, cabinFacts.length)]?.text ?? null,
+    guestFact: factAt(guestFacts, guestFactIndex),
+    cabinFact: factAt(cabinFacts, cabinFactIndex),
     nextVisit: next
       ? {
           startDate: next.startDate,

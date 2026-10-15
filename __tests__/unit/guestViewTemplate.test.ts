@@ -2,7 +2,7 @@ import nunjucks from 'nunjucks'
 import { describe, expect, test } from 'vitest'
 import { buildGuestOverlayModel, findGuest, GuestViewState } from '../../src/frontend/guestView'
 import { GuestProfileStats } from '../../src/types/GuestProfileStats'
-import { GuestStats, LiveStats } from '../../src/types/LiveStats'
+import { FunFact, GuestStats, LiveStats } from '../../src/types/LiveStats'
 import translations from '../../translations/nb.json'
 import occupiedMixed from '../fixtures/occupied-mixed.json'
 import regular from '../fixtures/guest-profile-regular.json'
@@ -94,6 +94,36 @@ describe('templates/guest-view.njk', () => {
     expect(html.indexOf('cabin-profile-fact')).toBeLessThan(html.indexOf('cabin-overlay-body'))
     expect(render({ status: 'loaded', profile: profile(regular), factIndex: 99 })).toContain(facts[0])
     expect(render({ status: 'loaded', profile: profile(noVisits) })).not.toContain('cabin-profile-fact')
+  })
+
+  test('highlights the numbers and names of the fun fact, and escapes the text', () => {
+    const withFact = (fact: FunFact) => profile({ ...regular, funFacts: [fact] })
+
+    const highlighted = render({
+      status: 'loaded',
+      profile: withFact({
+        text: 'Dette er besøk nr. 125 for Anna!',
+        priority: 95,
+        segments: [
+          { text: 'Dette er ' },
+          { text: 'besøk nr. 125', kind: 'stat' },
+          { text: ' for ' },
+          { text: 'Anna', kind: 'guest' },
+          { text: '!' },
+        ],
+      }),
+    })
+    expect(highlighted).toContain(
+      '<p class="cabin-profile-fact bright">Dette er <span class="cabin-highlight cabin-highlight-stat">besøk nr. 125</span> for ' +
+        '<span class="cabin-highlight cabin-highlight-guest">Anna</span>!</p>'
+    )
+
+    const escaped = render({
+      status: 'loaded',
+      profile: withFact({ text: '<b>Anna</b>', priority: 1, segments: [{ text: '<b>Anna</b>', kind: 'guest' }] }),
+    })
+    expect(escaped).toContain('cabin-highlight-guest">&lt;b&gt;Anna&lt;/b&gt;</span>')
+    expect(escaped).not.toContain('<b>Anna</b>')
   })
 
   test('renders the heatmap as a table with a named cell per month', () => {

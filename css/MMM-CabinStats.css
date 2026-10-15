@@ -159,6 +159,19 @@ div.MMM-CabinStats {
   margin-top: 4px;
 }
 
+/* Highlighted parts of a fact: numbers and durations (stat) and guest names (guest). */
+.cabin-highlight {
+  font-weight: 500;
+}
+
+.cabin-highlight-stat {
+  color: var(--cabin-accent);
+}
+
+.cabin-highlight-guest {
+  color: var(--cabin-guest-highlight, #8fd3ff);
+}
+
 /* Facts-only instance: full width and centered, like the compliments module. */
 .cabin-stats-facts {
   max-width: none;
@@ -485,10 +498,8 @@ div.MMM-CabinStats {
   font-size: calc(2.2 * var(--cabin-u));
 }
 
+/* Not flex: a flex container makes every text node and highlight span an item and drops the spaces between them. */
 .cabin-profile-fact {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   max-width: 100%;
   min-height: calc(9 * var(--cabin-u));
   font-size: calc(3.6 * var(--cabin-u));

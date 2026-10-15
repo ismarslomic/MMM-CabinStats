@@ -1,3 +1,5 @@
+import { FactView } from './factView'
+
 /** What the overlay reports back to the module. */
 export type GuestOverlayHandlers = {
   /** The close button was used. */
@@ -31,12 +33,21 @@ export function createGuestOverlay(html: string, handlers: GuestOverlayHandlers)
 }
 
 /** Shows another fun fact in an open guest view with a fade, without rebuilding anything else. */
-export function updateGuestOverlayFact(overlay: ParentNode, text: string): void {
-  const fact = overlay.querySelector<HTMLElement>('.cabin-profile-fact')
-  if (!fact) return
-  fact.classList.remove('cabin-fade-in')
+export function updateGuestOverlayFact(overlay: ParentNode, fact: FactView): void {
+  const element = overlay.querySelector<HTMLElement>('.cabin-profile-fact')
+  if (!element) return
+  element.classList.remove('cabin-fade-in')
   // Reading a layout property restarts the CSS animation.
-  void fact.offsetWidth
-  fact.textContent = text
-  fact.classList.add('cabin-fade-in')
+  void element.offsetWidth
+  // Text nodes and `textContent` only: the texts come from the backend and must not be parsed as html.
+  element.replaceChildren(
+    ...fact.segments.map(({ text, kind }) => {
+      if (kind === 'text') return document.createTextNode(text)
+      const span = document.createElement('span')
+      span.className = `cabin-highlight cabin-highlight-${kind}`
+      span.textContent = text
+      return span
+    })
+  )
+  element.classList.add('cabin-fade-in')
 }

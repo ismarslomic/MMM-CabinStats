@@ -26,7 +26,9 @@
 
 Each instance of the module keeps its own data, so you can show several cabins side by side.
 UI labels are Norwegian (`translations/nb.json`, also the fallback for other languages); fun fact texts come from the
-backend as-is.
+backend as-is. A fun fact can come with `segments`: its text split into parts, where a number or duration (`stat`) and a
+guest name (`guest`) are highlighted. Style them with `.cabin-highlight-stat` and `.cabin-highlight-guest` (the colour
+of `guest` is `--cabin-guest-highlight`). A fact without segments is shown as plain text.
 
 ## Installing the module
 
@@ -142,7 +144,7 @@ Dates are `YYYY-MM-DD` strings. Each guest has `guestId`, `firstName`, `lastName
 
 When a guest avatar is tapped, the module also calls `GET {apiBaseUrl}/api/stats/guests/{guestId}` once and expects a
 guest profile: `guest` (the same guest object as in the live stats, with `allTime` and `currentYear` stats and ranks),
-`visits` (`startDate`, `endDate`, `days`, `nights` and `status` of every visit) and `funFacts` (`text`, `priority`).
+`visits` (`startDate`, `endDate`, `days`, `nights` and `status` of every visit) and `funFacts` (`text`, `priority` and the optional `segments`).
 
 The full contract is the OpenAPI spec [`openapi/cabin-visits.json`](openapi/cabin-visits.json). The TypeScript types in
 `src/types/api.generated.ts` are generated from it, and `src/types/LiveStats.ts` adds a runtime guard that rejects

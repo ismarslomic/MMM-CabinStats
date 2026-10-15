@@ -487,7 +487,7 @@
           },
           "endDate": {
             "type": "string",
-            "description": "Last day of the current reservation (check-out date, exclusive — cabin is free from this date).",
+            "description": "Last day of the current reservation (check-out date). The reservation is still current on this day, and the cabin is free the day after.",
             "format": "date"
           },
           "guests": {
@@ -499,7 +499,7 @@
           },
           "remainingNights": {
             "type": "integer",
-            "description": "Number of nights remaining in the current reservation, from today until check-out."
+            "description": "Number of nights remaining in the current reservation, from today until check-out. 0 on the check-out day."
           }
         }
       },
@@ -540,6 +540,28 @@
           }
         }
       },
+      "FactSegment": {
+        "type": "object",
+        "title": "FactSegment",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Part of the text."
+          },
+          "kind": {
+            "type": "string",
+            "description": "What the part is, so the client can style it. Omitted for plain text.",
+            "enum": [
+              "text",
+              "stat",
+              "guest"
+            ]
+          }
+        }
+      },
       "FunFact": {
         "type": "object",
         "title": "FunFact",
@@ -557,11 +579,18 @@
           },
           "text": {
             "type": "string",
-            "description": "Ready-to-display text in Norwegian."
+            "description": "Ready-to-display text in Norwegian. Always equal to the segments joined together."
           },
           "priority": {
             "type": "integer",
             "description": "Importance from 0 to 100, higher is more important. Lists are sorted by priority, descending."
+          },
+          "segments": {
+            "type": "array",
+            "description": "The text split into parts for highlighting. Joined together they give the text. Clients should treat an unknown kind as plain text.",
+            "items": {
+              "$ref": "#/components/schemas/FactSegment"
+            }
           }
         }
       },
@@ -580,7 +609,7 @@
         "properties": {
           "isOccupied": {
             "type": "boolean",
-            "description": "True if the cabin is currently occupied (a reservation has started but not yet ended)."
+            "description": "True if the cabin is currently occupied: a reservation has started and its check-out date has not passed, so also on the check-out day."
           },
           "currentReservation": {
             "$ref": "#/components/schemas/CurrentReservationInfo"

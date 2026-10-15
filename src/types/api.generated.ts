@@ -242,12 +242,12 @@ export interface components {
             startDate: string;
             /**
              * Format: date
-             * @description Last day of the current reservation (check-out date, exclusive — cabin is free from this date).
+             * @description Last day of the current reservation (check-out date). The reservation is still current on this day, and the cabin is free the day after.
              */
             endDate: string;
             /** @description Statistics for each guest in the current reservation, ordered by current year days rank. */
             guests: components["schemas"]["GuestStats"][];
-            /** @description Number of nights remaining in the current reservation, from today until check-out. */
+            /** @description Number of nights remaining in the current reservation, from today until check-out. 0 on the check-out day. */
             remainingNights: number;
         } | null;
         /**
@@ -270,18 +270,30 @@ export interface components {
             /** @description Number of days from today until the next reservation starts. */
             daysUntil: number;
         } | null;
+        /** FactSegment */
+        FactSegment: {
+            /** @description Part of the text. */
+            text: string;
+            /**
+             * @description What the part is, so the client can style it. Omitted for plain text.
+             * @enum {string}
+             */
+            kind?: "text" | "stat" | "guest";
+        };
         /** FunFact */
         FunFact: {
             /** @description Guest the fact is about. Null for facts about the whole group or the cabin. */
             guestId?: string | null;
-            /** @description Ready-to-display text in Norwegian. */
+            /** @description Ready-to-display text in Norwegian. Always equal to the segments joined together. */
             text: string;
             /** @description Importance from 0 to 100, higher is more important. Lists are sorted by priority, descending. */
             priority: number;
+            /** @description The text split into parts for highlighting. Joined together they give the text. Clients should treat an unknown kind as plain text. */
+            segments?: components["schemas"]["FactSegment"][];
         };
         /** LiveStats */
         LiveStats: {
-            /** @description True if the cabin is currently occupied (a reservation has started but not yet ended). */
+            /** @description True if the cabin is currently occupied: a reservation has started and its check-out date has not passed, so also on the check-out day. */
             isOccupied: boolean;
             currentReservation?: components["schemas"]["CurrentReservationInfo"];
             nextReservation?: components["schemas"]["NextReservationInfo"];

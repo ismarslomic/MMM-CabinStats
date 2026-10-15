@@ -41,6 +41,15 @@ describe('isLiveStats', () => {
     expect(isLiveStats(payload)).toBe(true)
   })
 
+  test('accepts fun facts with segments, also with a kind the module does not know', () => {
+    const payload = mutated((s) => {
+      s.guestFunFacts[0].segments = [{ text: 'Anna', kind: 'guest' }, { text: ' er her' }, { text: '!', kind: 'new' }]
+      s.cabinFunFacts[0].segments = null
+      delete s.nextVisitFunFacts[0].segments
+    })
+    expect(isLiveStats(payload)).toBe(true)
+  })
+
   test.each([null, undefined, 'text', 42, [], {}])('rejects non-object or empty payload %j', (payload) => {
     expect(isLiveStats(payload)).toBe(false)
   })
@@ -56,6 +65,9 @@ describe('isLiveStats', () => {
     ['fun fact without text', (s: Json) => delete s.cabinFunFacts[0].text],
     ['fun fact priority as string', (s: Json) => (s.guestFunFacts[0].priority = 'high')],
     ['fun fact guestId as number', (s: Json) => (s.guestFunFacts[0].guestId = 1)],
+    ['fun fact segments not an array', (s: Json) => (s.guestFunFacts[0].segments = 'Anna')],
+    ['fun fact segment without text', (s: Json) => (s.guestFunFacts[0].segments = [{ kind: 'stat' }])],
+    ['fun fact segment kind as number', (s: Json) => (s.guestFunFacts[0].segments = [{ text: 'Anna', kind: 1 }])],
     ['currentReservation as string', (s: Json) => (s.currentReservation = 'none')],
     ['reservation without guests', (s: Json) => delete s.currentReservation.guests],
     ['reservation bad date format', (s: Json) => (s.currentReservation.startDate = '04.10.2026')],
