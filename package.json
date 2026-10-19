@@ -50,7 +50,7 @@
     "@types/magicmirror-module": "^2.16.6",
     "@types/node": "^26.6.5",
     "@types/nunjucks": "^3.2.6",
-    "@vitest/coverage-v8": "^5.0.4",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",
