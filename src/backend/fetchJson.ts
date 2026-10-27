@@ -2,6 +2,8 @@
 export type FetchJsonOptions = {
   /** Request timeout in milliseconds. */
   requestTimeout: number
+  /** Sent as the `X-Api-Key` header when set. */
+  apiToken?: string
 }
 
 /**
@@ -11,13 +13,13 @@ export type FetchJsonOptions = {
  */
 export async function fetchJson(
   url: string,
-  { requestTimeout }: FetchJsonOptions,
+  { requestTimeout, apiToken }: FetchJsonOptions,
   fetchFn: typeof fetch = fetch
 ): Promise<unknown> {
   let response: Response
   try {
     response = await fetchFn(url, {
-      headers: { Accept: 'application/json' },
+      headers: apiToken ? { Accept: 'application/json', 'X-Api-Key': apiToken } : { Accept: 'application/json' },
       signal: AbortSignal.timeout(requestTimeout),
     })
   } catch (error) {

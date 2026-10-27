@@ -28,6 +28,13 @@ describe('resolveConfig', () => {
     expect(hasApiBaseUrl(resolveConfig({}))).toBe(false)
   })
 
+  test('trims apiToken and ignores empty or non-string values', () => {
+    expect(resolveConfig({ apiToken: '  secret ' }).apiToken).toBe('secret')
+    for (const invalid of ['', '   ', 42, null]) {
+      expect(resolveConfig({ apiToken: invalid }).apiToken).toBeUndefined()
+    }
+  })
+
   test('applies partial overrides and keeps the other defaults', () => {
     const config = resolveConfig({
       apiBaseUrl: 'http://backend.example:8080/',

@@ -21,6 +21,12 @@ describe('fetchGuestProfile', () => {
     expect(init.signal).toBeInstanceOf(AbortSignal)
   })
 
+  test('sends the apiToken as X-Api-Key header', async () => {
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(profile))
+    await fetchGuestProfile('guest-1', { ...options, apiToken: 'secret' }, fetchFn)
+    expect(fetchFn.mock.calls[0][1].headers).toEqual({ Accept: 'application/json', 'X-Api-Key': 'secret' })
+  })
+
   test('encodes the guestId in the path', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(profile))
     await fetchGuestProfile('a/b?c', options, fetchFn)

@@ -67,6 +67,7 @@ var config = {
 | Option                  | Default  | Behavior                                                                                 |
 | ----------------------- | -------- | ---------------------------------------------------------------------------------------- |
 | `apiBaseUrl`            | none     | **Required.** Base url of the backend, `http` or `https`. A trailing slash is tolerated. |
+| `apiToken`              | none     | Optional. Sent to the backend as the `X-Api-Key` header on every request.                |
 | `updateInterval`        | `600000` | Milliseconds between requests (the data changes slowly).                                 |
 | `requestTimeout`        | `10000`  | Milliseconds before a backend request is aborted.                                        |
 | `guestFactInterval`     | `18000`  | Milliseconds between guest fun facts (15–20 s works well).                               |
@@ -122,7 +123,7 @@ The profile is fetched once when the view opens (`GET /api/stats/guests/{guestId
 open. The layout is drawn for a portrait 1440x2560 screen, and scales with the window.
 
 Invalid values fall back to the defaults, except `apiBaseUrl`, which has no default. Repeated start or resume calls
-never create duplicate timers. There are no API keys: the backend has no authentication.
+never create duplicate timers. `apiToken` is optional: without it no `X-Api-Key` header is sent.
 
 ### Troubleshooting
 

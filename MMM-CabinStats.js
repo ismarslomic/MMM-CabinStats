@@ -38,9 +38,10 @@
     const displays = ['full', 'stats', 'facts'];
     /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
     const maximumTimerDelay = 2 ** 31 - 1;
-    /** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
+    /** Defaults of every option except `apiBaseUrl`, which is required and has no default. `apiToken` is optional. */
     const defaultConfig = {
         apiBaseUrl: undefined,
+        apiToken: undefined,
         updateInterval: 600_000,
         requestTimeout: 10_000,
         guestFactInterval: 18_000,
@@ -70,6 +71,12 @@
             return undefined;
         }
     }
+    function nonEmptyString(value) {
+        if (typeof value !== 'string')
+            return undefined;
+        const trimmed = value.trim();
+        return trimmed === '' ? undefined : trimmed;
+    }
     function positiveTimerDelay(value, fallback) {
         return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= maximumTimerDelay
             ? value
@@ -92,6 +99,7 @@
         const config = typeof raw === 'object' && raw !== null ? { ...raw } : {};
         return {
             apiBaseUrl: normaliseApiBaseUrl(config.apiBaseUrl),
+            apiToken: nonEmptyString(config.apiToken),
             updateInterval: positiveTimerDelay(config.updateInterval, defaultConfig.updateInterval),
             requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
             guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
@@ -683,7 +691,7 @@
                 Log__namespace.error(`${this.name} has no valid apiBaseUrl; set it to e.g. http://backend.example:8080`);
             }
             for (const option of Object.keys(config)) {
-                if (option !== 'apiBaseUrl' && config[option] !== this.config[option]) {
+                if (option !== 'apiBaseUrl' && option !== 'apiToken' && config[option] !== this.config[option]) {
                     Log__namespace.error(`${this.name} has an invalid ${option}; using ${config[option]}`);
                 }
             }

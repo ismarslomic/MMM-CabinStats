@@ -4,6 +4,30 @@
  */
 
 export interface paths {
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Authenticated user
+         * @description Returns the user that Cloudflare Access authenticated (the Cf-Access-Jwt-Assertion header, verified against Cloudflare's signing keys) together with the application role stored for that person.
+         */
+        get: operations["getMe"];
+        put?: never;
+        /**
+         * Update the authenticated user
+         * @description Changes the properties of the authenticated user's own guest that are set in the body, and leaves the others unchanged. Every role may change firstName, lastName, birthYear and gender. An admin may also change email, isFamily and appRole (but not remove their own admin role). Changed properties are not overwritten by the guests.json sync at startup.
+         */
+        post: operations["updateMe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/guests/{guestId}/avatar": {
         parameters: {
             query?: never;
@@ -24,6 +48,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/guests/{guestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update a guest
+         * @description Admin only. Changes the properties that are set in the body (firstName, lastName, birthYear, gender, email, isFamily, appRole) and leaves the others unchanged. Changed properties are not overwritten by the guests.json sync at startup. An admin cannot remove their own admin role.
+         */
+        post: operations["updateGuest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stats": {
         parameters: {
             query?: never;
@@ -36,6 +80,32 @@ export interface paths {
          * @description Returns whether the cabin is currently occupied, details about the ongoing and next reservation (dates, guest statistics, remaining/upcoming nights), and all-time totals (visits, nights, unique guests) excluding future bookings. Suitable for a smart mirror or real-time dashboard.
          */
         get: operations["getLiveStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stats/guests/{guestId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Guest profile
+         * @description Returns the profile of one guest as of today, suitable for a guest page on a smart mirror:
+         *
+         *     * **guest**: the guest's statistics, with total visits, days and nights, ranks among all guests and among guests only (family excluded), first and last visit date and an avatar url. If the guest is at the cabin right now, the last visit date is the last visit before the current one.
+         *     * **visits**: all visits of the guest, historical, ongoing and upcoming, oldest first, each with a status (COMPLETED, ONGOING or UPCOMING), days and nights. Suitable for a timeline.
+         *     * **funFacts**: ready-to-display Norwegian fun facts about the guest, sorted by priority (highest first). The list is not capped, so pick the facts to display. A fact is only included when it is true for the guest, so the list can be short or empty for guests with few visits.
+         *
+         *     Driving statistics are not included. Upcoming visits are not counted in totals or facts.
+         */
+        get: operations["getGuestProfileStats"];
         put?: never;
         post?: never;
         delete?: never;
@@ -146,36 +216,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/stats/guests/{guestId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Guest profile
-         * @description Returns the profile of one guest as of today, suitable for a guest page on a smart mirror:
-         *
-         *     * **guest**: the guest's statistics, with total visits, days and nights, ranks among all guests and among guests only (family excluded), first and last visit date and an avatar url. If the guest is at the cabin right now, the last visit date is the last visit before the current one.
-         *     * **visits**: all visits of the guest, historical, ongoing and upcoming, oldest first, each with a status (COMPLETED, ONGOING or UPCOMING), days and nights. Suitable for a timeline.
-         *     * **funFacts**: ready-to-display Norwegian fun facts about the guest, sorted by priority (highest first). The list is not capped, so pick the facts to display. A fact is only included when it is true for the guest, so the list can be short or empty for guests with few visits.
-         *
-         *     Driving statistics are not included. Upcoming visits are not counted in totals or facts.
-         */
-        get: operations["getGuestProfileStats"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** UserPrincipal */
+        UserPrincipal: {
+            id: string;
+            name: string;
+            email: string;
+            /** @enum {string} */
+            role: "ADMIN" | "FAMILY_USER" | "GUEST_USER";
+        };
+        /** GuestUpdate */
+        GuestUpdate: {
+            firstName?: string | null;
+            lastName?: string | null;
+            birthYear?: number | null;
+            /** @enum {string|null} */
+            gender?: "MALE" | "FEMALE" | null;
+            email?: string | null;
+            isFamily?: boolean | null;
+            /** @enum {string|null} */
+            appRole?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
+        };
+        /** Guest */
+        Guest: {
+            id: string;
+            firstName: string;
+            lastName: string;
+            birthYear: number;
+            email?: string | null;
+            /** @enum {string} */
+            gender: "MALE" | "FEMALE";
+            notionId?: string | null;
+            isFamily?: boolean;
+            /** @enum {string|null} */
+            appRole?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
+        };
         /**
          * GuestPeriodStats
          * @description Guest statistics for one period (the current year or all years), counting only started reservations up to today.
@@ -309,6 +387,36 @@ export interface components {
             cabinFunFacts: components["schemas"]["FunFact"][];
             /** @description Fun facts about the next upcoming reservation, sorted by priority. Empty if no future reservation exists. */
             nextVisitFunFacts: components["schemas"]["FunFact"][];
+        };
+        /** GuestVisit */
+        GuestVisit: {
+            /**
+             * Format: date
+             * @description First day of the visit (check-in date, inclusive).
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @description Last day of the visit (check-out date). Same semantics as the end date of a reservation.
+             */
+            endDate: string;
+            /** @description Number of calendar days of the whole visit, including arrival and departure day. */
+            days: number;
+            /** @description Number of nights of the whole visit. */
+            nights: number;
+            /**
+             * @description Where the visit stands today: COMPLETED (the guest has left), ONGOING (the guest is at the cabin) or UPCOMING (the visit has not started yet).
+             * @enum {string}
+             */
+            status: "COMPLETED" | "ONGOING" | "UPCOMING";
+        };
+        /** GuestProfileStats */
+        GuestProfileStats: {
+            guest: components["schemas"]["GuestStats"];
+            /** @description All visits of the guest, historical, ongoing and upcoming, oldest first. Suitable for a timeline. */
+            visits: components["schemas"]["GuestVisit"][];
+            /** @description Fun facts about the guest, as ready-to-display Norwegian text that mentions the guest by first name. Sorted by priority, highest first. Not capped, so pick the ones to display. */
+            funFacts: components["schemas"]["FunFact"][];
         };
         /** CurrentYearStats */
         CurrentYearStats: {
@@ -790,36 +898,6 @@ export interface components {
             /** @description Age group breakdown of all registered guests, using current age at time of the request. */
             ageGroups: components["schemas"]["AgeGroup"][];
         };
-        /** GuestVisit */
-        GuestVisit: {
-            /**
-             * Format: date
-             * @description First day of the visit (check-in date, inclusive).
-             */
-            startDate: string;
-            /**
-             * Format: date
-             * @description Last day of the visit (check-out date). Same semantics as the end date of a reservation.
-             */
-            endDate: string;
-            /** @description Number of calendar days of the whole visit, including arrival and departure day. */
-            days: number;
-            /** @description Number of nights of the whole visit. */
-            nights: number;
-            /**
-             * @description Where the visit stands today: COMPLETED (the guest has left), ONGOING (the guest is at the cabin) or UPCOMING (the visit has not started yet).
-             * @enum {string}
-             */
-            status: "COMPLETED" | "ONGOING" | "UPCOMING";
-        };
-        /** GuestProfileStats */
-        GuestProfileStats: {
-            guest: components["schemas"]["GuestStats"];
-            /** @description All visits of the guest, historical, ongoing and upcoming, oldest first. Suitable for a timeline. */
-            visits: components["schemas"]["GuestVisit"][];
-            /** @description Fun facts about the guest, as ready-to-display Norwegian text that mentions the guest by first name. Sorted by priority, highest first. Not capped, so pick the ones to display. */
-            funFacts: components["schemas"]["FunFact"][];
-        };
     };
     responses: never;
     parameters: never;
@@ -829,6 +907,118 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The user, with id, name, email and role (ADMIN, FAMILY_USER, GUEST_USER). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPrincipal"];
+                };
+            };
+            /** @description The Cloudflare Access token is missing or invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The authenticated person has no role in the application. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cloudflare Access is not configured for the application. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GuestUpdate"];
+            };
+        };
+        responses: {
+            /** @description The updated user, with id, name, email and role. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserPrincipal"];
+                };
+            };
+            /** @description The body is not valid JSON or a property has an invalid value. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description The Cloudflare Access token is missing or invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The body changes a property the role may not change. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The email is already used by another user. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Cloudflare Access is not configured for the application. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getGuestAvatar: {
         parameters: {
             query?: never;
@@ -875,12 +1065,108 @@ export interface operations {
                     "application/json": string;
                 };
             };
+            /** @description The Cloudflare Access token or the API key is missing or invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller has no role in the application. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             /** @description The guest does not exist or has no avatar. */
             404: {
                 headers: {
                     ETag?: {
                         "text/plain": unknown;
                     };
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Cloudflare Access is not configured for the application. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    updateGuest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Internal unique identifier of the guest. */
+                guestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["GuestUpdate"];
+            };
+        };
+        responses: {
+            /** @description The updated guest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Guest"];
+                };
+            };
+            /** @description The body is not valid JSON or a property has an invalid value. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description The Cloudflare Access token is missing or invalid. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The caller is not an admin, or has no role in the application. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description The guest does not exist. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The email is already used by another user. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description Cloudflare Access is not configured for the application. */
+            503: {
+                headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
@@ -911,6 +1197,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    getGuestProfileStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Internal unique identifier of the guest. */
+                guestId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The profile of the guest. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuestProfileStats"];
+                };
+            };
+            /** @description The guestId path parameter is missing. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
+            };
+            /** @description There is no guest with the given id. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": string;
+                };
             };
         };
     };
@@ -1058,47 +1385,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    getGuestProfileStats: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description Internal unique identifier of the guest. */
-                guestId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The profile of the guest. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GuestProfileStats"];
-                };
-            };
-            /** @description The guestId path parameter is missing. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            /** @description There is no guest with the given id. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
             };
         };
     };

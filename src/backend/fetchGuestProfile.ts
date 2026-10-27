@@ -10,11 +10,11 @@ import { FetchLiveStatsOptions } from './fetchLiveStats'
  */
 export async function fetchGuestProfile(
   guestId: string,
-  { apiBaseUrl, requestTimeout }: FetchLiveStatsOptions,
+  { apiBaseUrl, requestTimeout, apiToken }: FetchLiveStatsOptions,
   fetchFn: typeof fetch = fetch
 ): Promise<GuestProfileStats> {
   const url = `${apiBaseUrl}/api/stats/guests/${encodeURIComponent(guestId)}`
-  const body = await fetchJson(url, { requestTimeout }, fetchFn)
+  const body = await fetchJson(url, { requestTimeout, apiToken }, fetchFn)
 
   if (!isGuestProfileStats(body)) {
     throw new Error(`Response from ${url} does not match the expected guest profile contract`)

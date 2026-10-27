@@ -7,6 +7,8 @@ export type FetchLiveStatsOptions = {
   apiBaseUrl: string
   /** Request timeout in milliseconds. */
   requestTimeout: number
+  /** Optional API token, sent as the `X-Api-Key` header. */
+  apiToken?: string
 }
 
 /**
@@ -16,11 +18,11 @@ export type FetchLiveStatsOptions = {
  * that does not match the contract.
  */
 export async function fetchLiveStats(
-  { apiBaseUrl, requestTimeout }: FetchLiveStatsOptions,
+  { apiBaseUrl, requestTimeout, apiToken }: FetchLiveStatsOptions,
   fetchFn: typeof fetch = fetch
 ): Promise<LiveStats> {
   const url = `${apiBaseUrl}/api/stats`
-  const body = await fetchJson(url, { requestTimeout }, fetchFn)
+  const body = await fetchJson(url, { requestTimeout, apiToken }, fetchFn)
 
   if (!isLiveStats(body)) {
     throw new Error(`Response from ${url} does not match the expected live stats contract`)
