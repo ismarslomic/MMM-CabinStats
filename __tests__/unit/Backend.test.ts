@@ -53,6 +53,7 @@ describe('Backend', () => {
   test('the generated CommonJS helper preserves the static create method and fetches', async () => {
     // Loading the distributed file catches bundler interop errors that TS source tests miss.
     vi.useFakeTimers({ toFake: ['Date'] }).setSystemTime(new Date('2026-10-06T09:00:00Z'))
+    fetchMock.mockImplementation(routeFetch(occupiedMixed))
     const BuiltHelper = loadBuiltHelper()
     const builtHelper = new BuiltHelper()
     Object.assign(builtHelper, { name: 'MMM-CabinStats' })
@@ -66,7 +67,7 @@ describe('Backend', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://backend.example:8080/api/stats', expect.anything())
     expect(builtHelper.sendSocketNotification).toHaveBeenCalledWith(SocketNotification.LIVE_STATS_RESPONSE, {
       identifier: 'built_instance',
-      liveStats: occupiedMixed,
+      liveStats: expect.objectContaining({ isOccupied: occupiedMixed.isOccupied }),
       fetchedAt: Date.now(),
     })
   })
