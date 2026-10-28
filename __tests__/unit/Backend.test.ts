@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi, type MockedFunction } from 'vitest'
 import Helper from '../../src/backend/Backend'
+import { clearAvatarCache } from '../../src/backend/resolveAvatars'
 import { loadBuiltHelper } from './helpers/load-built-helper'
 import { NodeHelperModule } from 'node_helper'
 import * as Log from 'logger'
@@ -13,6 +14,18 @@ function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status })
 }
 
+const avatarDataUrl = 'data:image/jpeg;base64,AQID'
+
+/** Answers avatar requests with an image and every other request with the JSON body. */
+function routeFetch(body: unknown) {
+  return (url: string) =>
+    Promise.resolve(
+      url.endsWith('/avatar')
+        ? new Response(new Uint8Array([1, 2, 3]), { headers: { 'Content-Type': 'image/jpeg' } })
+        : jsonResponse(body)
+    )
+}
+
 /** Lets the helper's un-awaited async work finish. */
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
@@ -22,6 +35,7 @@ describe('Backend', () => {
   let fetchMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
+    clearAvatarCache()
     helper = new Helper()
     Object.assign(helper, { name: 'MMM-CabinStats' })
     mockedSendSocketNotification = helper.sendSocketNotification as MockedFunction<typeof helper.sendSocketNotification>
@@ -83,13 +97,19 @@ describe('Backend', () => {
   test('replies with the live stats and the requesting identifier', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }).setSystemTime(new Date('2026-10-06T09:00:00Z'))
 
+    fetchMock.mockImplementation(routeFetch(occupiedMixed))
     helper.socketNotificationReceived(SocketNotification.LIVE_STATS_REQUEST, { identifier: 'module_1', config })
     await flush()
 
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock.mock.calls[0][0]).toBe('http://backend.example:8080/api/stats')
+    expect(fetchMock.mock.calls.slice(1).every(([url]) => url.endsWith('/avatar'))).toBe(true)
     expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.LIVE_STATS_RESPONSE, {
       identifier: 'module_1',
-      liveStats: occupiedMixed,
+      liveStats: expect.objectContaining({
+        currentReservation: expect.objectContaining({
+          guests: expect.arrayContaining([expect.objectContaining({ avatarUrl: avatarDataUrl })]),
+        }),
+      }),
       fetchedAt: Date.now(),
     })
   })
@@ -129,7 +149,7 @@ describe('Backend', () => {
 
   describe('guest profile', () => {
     beforeEach(() => {
-      fetchMock.mockResolvedValue(jsonResponse(guestProfile))
+      fetchMock.mockImplementation(routeFetch(guestProfile))
     })
 
     test('replies with the guest profile, the requesting identifier and the guestId', async () => {
@@ -140,12 +160,12 @@ describe('Backend', () => {
       })
       await flush()
 
-      expect(fetchMock).toHaveBeenCalledOnce()
       expect(fetchMock.mock.calls[0][0]).toBe('http://backend.example:8080/api/stats/guests/guest%201')
+      expect(fetchMock.mock.calls[1][0]).toBe(`http://backend.example:8080${guestProfile.guest.avatarUrl}`)
       expect(mockedSendSocketNotification).toHaveBeenCalledExactlyOnceWith(SocketNotification.GUEST_PROFILE_RESPONSE, {
         identifier: 'module_1',
         guestId: 'guest 1',
-        profile: guestProfile,
+        profile: { ...guestProfile, guest: { ...guestProfile.guest, avatarUrl: avatarDataUrl } },
       })
     })
 

@@ -131,9 +131,9 @@ never create duplicate timers. `apiToken` is optional: without it no `X-Api-Key`
 - **Nothing shows**: the backend has never answered. Check the MagicMirror log for `could not load live stats`; it
   names the cause (network error, timeout, non-2xx status, invalid JSON, or a response that does not match the
   contract).
-- **Initials instead of photos**: the browser showing the mirror must reach `apiBaseUrl` directly, because avatars
-  are plain `<img>` tags pointing at `apiBaseUrl` plus the guest's `avatarUrl`. Data is fetched by the MagicMirror
-  server, avatars by the browser.
+- **Initials instead of photos**: the avatar could not be loaded. The MagicMirror server fetches avatars from
+  `apiBaseUrl` plus the guest's `avatarUrl`, with the `apiToken` as `X-Api-Key` header, and gives the browser the
+  image. Check the MagicMirror log for `Could not load avatar`.
 
 ## Backend API
 

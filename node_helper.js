@@ -316,6 +316,90 @@ async function fetchLiveStats({ apiBaseUrl, requestTimeout, apiToken }, fetchFn 
     return body;
 }
 
+/**
+ * Fetches a guest avatar and returns it as a `data:` url. The browser cannot send the `X-Api-Key` header from an
+ * `<img>` tag, so the MagicMirror server fetches the image and hands the browser the bytes.
+ *
+ * @throws Error with a short description on network failure, timeout, non-2xx status or a response that is not an image.
+ */
+async function fetchAvatar(url, { requestTimeout, apiToken }, fetchFn = fetch) {
+    let response;
+    try {
+        response = await fetchFn(url, {
+            headers: apiToken ? { Accept: 'image/*', 'X-Api-Key': apiToken } : { Accept: 'image/*' },
+            signal: AbortSignal.timeout(requestTimeout),
+        });
+    }
+    catch (error) {
+        const isTimeout = error instanceof Error && error.name === 'TimeoutError';
+        throw new Error(isTimeout ? `Request to ${url} timed out after ${requestTimeout} ms` : `Request to ${url} failed`, {
+            cause: error,
+        });
+    }
+    if (!response.ok) {
+        throw new Error(`Request to ${url} failed with status ${response.status}`);
+    }
+    const contentType = response.headers.get('Content-Type')?.split(';')[0].trim() ?? 'image/jpeg';
+    if (!contentType.startsWith('image/')) {
+        throw new Error(`Response from ${url} is not an image`);
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    return `data:${contentType};base64,${bytes.toString('base64')}`;
+}
+
+/** Avatars by absolute url. The backend changes `avatarUrl` when the image changes, so an entry never goes stale. */
+const cache = new Map();
+/** Upper bound on cached avatars, so a long-running mirror cannot grow without limit. */
+const maximumCacheSize = 100;
+async function dataUriFor(url, options, fetchFn) {
+    const cached = cache.get(url);
+    if (cached)
+        return cached;
+    try {
+        const dataUri = await fetchAvatar(url, options, fetchFn);
+        if (cache.size >= maximumCacheSize)
+            cache.clear();
+        cache.set(url, dataUri);
+        return dataUri;
+    }
+    catch (error) {
+        Log__namespace.warn(`Could not load avatar: ${error instanceof Error ? error.message : String(error)}`);
+        return null;
+    }
+}
+/**
+ * Returns the guests with `avatarUrl` replaced by a `data:` url of the image, which the backend only serves with the
+ * API key. A guest whose avatar cannot be loaded gets `null`, so the frontend shows the initials.
+ */
+async function resolveAvatars(guests, options, fetchFn = fetch) {
+    return Promise.all(guests.map(async (guest) => {
+        if (!guest.avatarUrl)
+            return guest;
+        const path = guest.avatarUrl.startsWith('/') ? guest.avatarUrl : `/${guest.avatarUrl}`;
+        return { ...guest, avatarUrl: await dataUriFor(`${options.apiBaseUrl}${path}`, options, fetchFn) };
+    }));
+}
+/** {@link resolveAvatars} for every guest of the current and next reservation. */
+async function resolveLiveStatsAvatars(liveStats, options, fetchFn = fetch) {
+    const { currentReservation, nextReservation } = liveStats;
+    return {
+        ...liveStats,
+        currentReservation: currentReservation && {
+            ...currentReservation,
+            guests: await resolveAvatars(currentReservation.guests, options, fetchFn),
+        },
+        nextReservation: nextReservation && {
+            ...nextReservation,
+            guests: await resolveAvatars(nextReservation.guests, options, fetchFn),
+        },
+    };
+}
+/** {@link resolveAvatars} for the guest of a profile. */
+async function resolveProfileAvatars(profile, options, fetchFn = fetch) {
+    const [guest] = await resolveAvatars([profile.guest], options, fetchFn);
+    return { ...profile, guest };
+}
+
 // noinspection JSVoidFunctionReturnValueUsed,JSUnusedGlobalSymbols
 // Default import preserves static methods on MagicMirror's CommonJS NodeHelper class.
 var Backend = NodeHelper.create({
@@ -351,7 +435,7 @@ var Backend = NodeHelper.create({
             return;
         }
         try {
-            const liveStats = await fetchLiveStats(config);
+            const liveStats = await resolveLiveStatsAvatars(await fetchLiveStats(config), config);
             const payload = { identifier, liveStats, fetchedAt: Date.now() };
             this.sendSocketNotification(SocketNotification.LIVE_STATS_RESPONSE, payload);
         }
@@ -366,7 +450,7 @@ var Backend = NodeHelper.create({
             return;
         }
         try {
-            const profile = await fetchGuestProfile(guestId, config);
+            const profile = await resolveProfileAvatars(await fetchGuestProfile(guestId, config), config);
             const payload = { identifier, guestId, profile };
             this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload);
         }

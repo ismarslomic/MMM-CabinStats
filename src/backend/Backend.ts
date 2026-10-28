@@ -15,6 +15,7 @@ import {
 } from '../types/Messages'
 import { fetchGuestProfile } from './fetchGuestProfile'
 import { fetchLiveStats } from './fetchLiveStats'
+import { resolveLiveStatsAvatars, resolveProfileAvatars } from './resolveAvatars'
 
 export default NodeHelper.create({
   start(): void {
@@ -50,7 +51,7 @@ export default NodeHelper.create({
       return
     }
     try {
-      const liveStats = await fetchLiveStats(config)
+      const liveStats = await resolveLiveStatsAvatars(await fetchLiveStats(config), config)
       const payload: LiveStatsResponse = { identifier, liveStats, fetchedAt: Date.now() }
       this.sendSocketNotification(SocketNotification.LIVE_STATS_RESPONSE, payload)
     } catch (error) {
@@ -65,7 +66,7 @@ export default NodeHelper.create({
       return
     }
     try {
-      const profile = await fetchGuestProfile(guestId, config)
+      const profile = await resolveProfileAvatars(await fetchGuestProfile(guestId, config), config)
       const payload: GuestProfileResponse = { identifier, guestId, profile }
       this.sendSocketNotification(SocketNotification.GUEST_PROFILE_RESPONSE, payload)
     } catch (error) {

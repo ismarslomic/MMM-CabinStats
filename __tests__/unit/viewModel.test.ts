@@ -30,6 +30,7 @@ describe('avatarUrlFor', () => {
     ['http://backend.example:8080', undefined, null],
     ['http://backend.example:8080', '', null],
     [undefined, '/api/guests/guest-1/avatar', null],
+    ['http://backend.example:8080', 'data:image/jpeg;base64,AQID', 'data:image/jpeg;base64,AQID'],
   ])('%j + %j gives %j', (base, avatar, expected) => {
     expect(avatarUrlFor(base, avatar)).toBe(expected)
   })

@@ -83,8 +83,12 @@ const emptyViewModel = (view: ViewName, display: Display, animationSpeed: number
   animationSpeed,
 })
 
-/** Joins the base url with the relative avatar url from the backend. `null` when either is missing. */
+/**
+ * Joins the base url with the relative avatar url from the backend. `null` when either is missing. A `data:` url,
+ * which the node helper makes of an avatar it fetched with the API key, is used as is.
+ */
 export function avatarUrlFor(apiBaseUrl: string | undefined, avatarUrl: string | null | undefined): string | null {
+  if (avatarUrl?.startsWith('data:')) return avatarUrl
   if (!apiBaseUrl || !avatarUrl) return null
   return `${apiBaseUrl}${avatarUrl.startsWith('/') ? '' : '/'}${avatarUrl}`
 }
