@@ -10,6 +10,8 @@ export type Config = {
    * Required: there is no default, and without a valid value the module shows a config error and never fetches.
    */
   apiBaseUrl: string | undefined
+  /** Optional API token, sent to the backend as the `X-Api-Key` header. Without it no header is sent. */
+  apiToken: string | undefined
   /** Poll interval in milliseconds (the backend data changes slowly). Invalid values fall back to the default. */
   updateInterval: number
   /** Timeout of a single backend request in milliseconds. */
@@ -42,9 +44,10 @@ export type Config = {
 /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
 const maximumTimerDelay = 2 ** 31 - 1
 
-/** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
+/** Defaults of every option except `apiBaseUrl`, which is required and has no default. `apiToken` is optional. */
 export const defaultConfig: Config = {
   apiBaseUrl: undefined,
+  apiToken: undefined,
   updateInterval: 600_000,
   requestTimeout: 10_000,
   guestFactInterval: 18_000,
@@ -77,6 +80,12 @@ export function normaliseApiBaseUrl(value: unknown): string | undefined {
   }
 }
 
+function nonEmptyString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const trimmed = value.trim()
+  return trimmed === '' ? undefined : trimmed
+}
+
 function positiveTimerDelay(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= maximumTimerDelay
     ? value
@@ -103,6 +112,7 @@ export function resolveConfig(raw: unknown): Config {
   const config: Record<string, unknown> = typeof raw === 'object' && raw !== null ? { ...raw } : {}
   return {
     apiBaseUrl: normaliseApiBaseUrl(config.apiBaseUrl),
+    apiToken: nonEmptyString(config.apiToken),
     updateInterval: positiveTimerDelay(config.updateInterval, defaultConfig.updateInterval),
     requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
     guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),

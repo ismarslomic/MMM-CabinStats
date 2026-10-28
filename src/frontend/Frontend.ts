@@ -36,7 +36,7 @@ const frontendModule: Omit<
       Log.error(`${this.name} has no valid apiBaseUrl; set it to e.g. http://backend.example:8080`)
     }
     for (const option of Object.keys(config) as (keyof typeof config)[]) {
-      if (option !== 'apiBaseUrl' && config[option] !== this.config[option]) {
+      if (option !== 'apiBaseUrl' && option !== 'apiToken' && config[option] !== this.config[option]) {
         Log.error(`${this.name} has an invalid ${option}; using ${config[option]}`)
       }
     }

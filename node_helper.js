@@ -47,7 +47,7 @@ var SocketNotification;
 const displays = ['full', 'stats', 'facts'];
 /** JavaScript timers use a signed 32-bit delay; larger values overflow. */
 const maximumTimerDelay = 2 ** 31 - 1;
-/** Defaults of every option except `apiBaseUrl`, which is required and has no default. */
+/** Defaults of every option except `apiBaseUrl`, which is required and has no default. `apiToken` is optional. */
 const defaultConfig = {
     updateInterval: 600_000,
     requestTimeout: 10_000,
@@ -78,6 +78,12 @@ function normaliseApiBaseUrl(value) {
         return undefined;
     }
 }
+function nonEmptyString(value) {
+    if (typeof value !== 'string')
+        return undefined;
+    const trimmed = value.trim();
+    return trimmed === '' ? undefined : trimmed;
+}
 function positiveTimerDelay(value, fallback) {
     return typeof value === 'number' && Number.isInteger(value) && value > 0 && value <= maximumTimerDelay
         ? value
@@ -100,6 +106,7 @@ function resolveConfig(raw) {
     const config = typeof raw === 'object' && raw !== null ? { ...raw } : {};
     return {
         apiBaseUrl: normaliseApiBaseUrl(config.apiBaseUrl),
+        apiToken: nonEmptyString(config.apiToken),
         updateInterval: positiveTimerDelay(config.updateInterval, defaultConfig.updateInterval),
         requestTimeout: positiveTimerDelay(config.requestTimeout, defaultConfig.requestTimeout),
         guestFactInterval: positiveTimerDelay(config.guestFactInterval, defaultConfig.guestFactInterval),
@@ -254,11 +261,11 @@ function isGuestProfileRequest(payload) {
  *
  * @throws Error with a short description on network failure, timeout, non-2xx status or invalid JSON.
  */
-async function fetchJson(url, { requestTimeout }, fetchFn = fetch) {
+async function fetchJson(url, { requestTimeout, apiToken }, fetchFn = fetch) {
     let response;
     try {
         response = await fetchFn(url, {
-            headers: { Accept: 'application/json' },
+            headers: apiToken ? { Accept: 'application/json', 'X-Api-Key': apiToken } : { Accept: 'application/json' },
             signal: AbortSignal.timeout(requestTimeout),
         });
     }
@@ -285,9 +292,9 @@ async function fetchJson(url, { requestTimeout }, fetchFn = fetch) {
  * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
  * that does not match the contract.
  */
-async function fetchGuestProfile(guestId, { apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+async function fetchGuestProfile(guestId, { apiBaseUrl, requestTimeout, apiToken }, fetchFn = fetch) {
     const url = `${apiBaseUrl}/api/stats/guests/${encodeURIComponent(guestId)}`;
-    const body = await fetchJson(url, { requestTimeout }, fetchFn);
+    const body = await fetchJson(url, { requestTimeout, apiToken }, fetchFn);
     if (!isGuestProfileStats(body)) {
         throw new Error(`Response from ${url} does not match the expected guest profile contract`);
     }
@@ -300,9 +307,9 @@ async function fetchGuestProfile(guestId, { apiBaseUrl, requestTimeout }, fetchF
  * @throws Error with a short description on network failure, timeout, non-2xx status, invalid JSON or a payload
  * that does not match the contract.
  */
-async function fetchLiveStats({ apiBaseUrl, requestTimeout }, fetchFn = fetch) {
+async function fetchLiveStats({ apiBaseUrl, requestTimeout, apiToken }, fetchFn = fetch) {
     const url = `${apiBaseUrl}/api/stats`;
-    const body = await fetchJson(url, { requestTimeout }, fetchFn);
+    const body = await fetchJson(url, { requestTimeout, apiToken }, fetchFn);
     if (!isLiveStats(body)) {
         throw new Error(`Response from ${url} does not match the expected live stats contract`);
     }
