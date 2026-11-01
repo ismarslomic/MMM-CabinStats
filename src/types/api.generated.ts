@@ -13,13 +13,13 @@ export interface paths {
         };
         /**
          * Authenticated user
-         * @description Returns the user that Cloudflare Access authenticated (the Cf-Access-Jwt-Assertion header, verified against Cloudflare's signing keys) together with the application role stored for that person.
+         * @description Returns the user that Cloudflare Access authenticated (the Cf-Access-Jwt-Assertion header, verified against Cloudflare's signing keys) together with the profile and the application role stored for that person.
          */
         get: operations["getMe"];
         put?: never;
         /**
          * Update the authenticated user
-         * @description Changes the properties of the authenticated user's own guest that are set in the body, and leaves the others unchanged. Every role may change firstName, lastName, birthYear and gender. An admin may also change email, isFamily and appRole (but not remove their own admin role). Changed properties are not overwritten by the guests.json sync at startup.
+         * @description Changes the profile of the authenticated user's own guest. Every role may change firstName, lastName, birthYear and gender, and all of them are required. Properties that are not part of the request, such as email, isFamily and role, cannot be changed here and are ignored. Changed properties are not overwritten by the guests.json sync at startup.
          */
         post: operations["updateMe"];
         delete?: never;
@@ -59,7 +59,7 @@ export interface paths {
         put?: never;
         /**
          * Update a guest
-         * @description Admin only. Changes the properties that are set in the body (firstName, lastName, birthYear, gender, email, isFamily, appRole) and leaves the others unchanged. Changed properties are not overwritten by the guests.json sync at startup. An admin cannot remove their own admin role.
+         * @description Admin only. Changes the properties that are set in the body (firstName, lastName, birthYear, gender, email, isFamily, role) and leaves the others unchanged. Changed properties are not overwritten by the guests.json sync at startup. An admin cannot remove their own admin role.
          */
         post: operations["updateGuest"];
         delete?: never;
@@ -224,9 +224,23 @@ export interface components {
         UserPrincipal: {
             id: string;
             name: string;
+            firstName: string;
+            lastName: string;
+            birthYear: number;
+            /** @enum {string} */
+            gender: "MALE" | "FEMALE";
             email: string;
+            isFamily: boolean;
             /** @enum {string} */
             role: "ADMIN" | "FAMILY_USER" | "GUEST_USER";
+        };
+        /** MeUpdate */
+        MeUpdate: {
+            firstName: string;
+            lastName: string;
+            birthYear: number;
+            /** @enum {string} */
+            gender: "MALE" | "FEMALE";
         };
         /** GuestUpdate */
         GuestUpdate: {
@@ -238,7 +252,7 @@ export interface components {
             email?: string | null;
             isFamily?: boolean | null;
             /** @enum {string|null} */
-            appRole?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
+            role?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
         };
         /** Guest */
         Guest: {
@@ -252,7 +266,7 @@ export interface components {
             notionId?: string | null;
             isFamily?: boolean;
             /** @enum {string|null} */
-            appRole?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
+            role?: "ADMIN" | "FAMILY_USER" | "GUEST_USER" | null;
         };
         /**
          * GuestPeriodStats
@@ -916,7 +930,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description The user, with id, name, email and role (ADMIN, FAMILY_USER, GUEST_USER). */
+            /** @description The user, with id, name (first and last name together), firstName, lastName, birthYear, gender, email, isFamily and role (ADMIN, FAMILY_USER, GUEST_USER). */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -957,11 +971,11 @@ export interface operations {
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["GuestUpdate"];
+                "application/json": components["schemas"]["MeUpdate"];
             };
         };
         responses: {
-            /** @description The updated user, with id, name, email and role. */
+            /** @description The updated user, same as the response of GET /api/me. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -970,7 +984,7 @@ export interface operations {
                     "application/json": components["schemas"]["UserPrincipal"];
                 };
             };
-            /** @description The body is not valid JSON or a property has an invalid value. */
+            /** @description The body is not valid JSON, a property is missing or a property has an invalid value. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -986,29 +1000,19 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The body changes a property the role may not change. */
+            /** @description The authenticated person has no role in the application. */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": string;
-                };
-            };
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description The email is already used by another user. */
-            409: {
+            /** @description The guest of the authenticated user does not exist. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": string;
-                };
+                content?: never;
             };
             /** @description Cloudflare Access is not configured for the application. */
             503: {
