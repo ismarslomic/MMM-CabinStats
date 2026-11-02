@@ -32,6 +32,8 @@ export type StayView = {
   startDate: string
   endDate: string
   remainingNights: number
+  /** Number of the reservation over all time, starting at 1. */
+  reservationOrder: number
 }
 
 /** The upcoming reservation, `null` when there is none or `showNextVisit` is off. */
@@ -39,6 +41,8 @@ export type NextVisitView = {
   startDate: string
   endDate: string
   daysUntil: number
+  /** Number of the reservation over all time, starting at 1. */
+  reservationOrder: number
   guests: GuestView[]
 }
 
@@ -128,7 +132,12 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
     display,
     guestView: config.guestView,
     stay: current
-      ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
+      ? {
+          startDate: current.startDate,
+          endDate: current.endDate,
+          remainingNights: current.remainingNights,
+          reservationOrder: current.reservationOrder,
+        }
       : null,
     guests: current ? current.guests.map((guest) => toGuestView(guest, apiBaseUrl)) : [],
     guestFact: factAt(guestFacts, guestFactIndex),
@@ -138,6 +147,7 @@ export function buildViewModel({ config, liveStats, guestFactIndex, cabinFactInd
           startDate: next.startDate,
           endDate: next.endDate,
           daysUntil: next.daysUntil,
+          reservationOrder: next.reservationOrder,
           guests: next.guests.map((guest) => toGuestView(guest, apiBaseUrl)),
         }
       : null,

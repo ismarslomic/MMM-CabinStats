@@ -185,14 +185,16 @@
             isIsoDate(value.startDate) &&
             isIsoDate(value.endDate) &&
             isArrayOf(value.guests, isGuestStats) &&
-            isNumber(value.remainingNights));
+            isNumber(value.remainingNights) &&
+            isNumber(value.reservationOrder));
     }
     function isNextReservation(value) {
         return (isRecord$1(value) &&
             isIsoDate(value.startDate) &&
             isIsoDate(value.endDate) &&
             isArrayOf(value.guests, isGuestStats) &&
-            isNumber(value.daysUntil));
+            isNumber(value.daysUntil) &&
+            isNumber(value.reservationOrder));
     }
     /** Type guard for {@link FactSegment}. Any string is accepted as `kind`: the backend may add kinds later. */
     function isFactSegment(value) {
@@ -403,7 +405,12 @@
             display,
             guestView: config.guestView,
             stay: current
-                ? { startDate: current.startDate, endDate: current.endDate, remainingNights: current.remainingNights }
+                ? {
+                    startDate: current.startDate,
+                    endDate: current.endDate,
+                    remainingNights: current.remainingNights,
+                    reservationOrder: current.reservationOrder,
+                }
                 : null,
             guests: current ? current.guests.map((guest) => toGuestView(guest, apiBaseUrl)) : [],
             guestFact: factAt(guestFacts, guestFactIndex),
@@ -413,6 +420,7 @@
                     startDate: next.startDate,
                     endDate: next.endDate,
                     daysUntil: next.daysUntil,
+                    reservationOrder: next.reservationOrder,
                     guests: next.guests.map((guest) => toGuestView(guest, apiBaseUrl)),
                 }
                 : null,

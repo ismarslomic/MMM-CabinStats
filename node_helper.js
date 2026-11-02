@@ -182,14 +182,16 @@ function isCurrentReservation(value) {
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
         isArrayOf(value.guests, isGuestStats) &&
-        isNumber(value.remainingNights));
+        isNumber(value.remainingNights) &&
+        isNumber(value.reservationOrder));
 }
 function isNextReservation(value) {
     return (isRecord$1(value) &&
         isIsoDate(value.startDate) &&
         isIsoDate(value.endDate) &&
         isArrayOf(value.guests, isGuestStats) &&
-        isNumber(value.daysUntil));
+        isNumber(value.daysUntil) &&
+        isNumber(value.reservationOrder));
 }
 /** Type guard for {@link FactSegment}. Any string is accepted as `kind`: the backend may add kinds later. */
 function isFactSegment(value) {
