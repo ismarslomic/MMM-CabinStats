@@ -96,7 +96,8 @@
       }
     ],
     "remainingNights": 2,
-    "reservationOrder": 42
+    "reservationOrder": 142,
+    "reservationOrderInYear": 42
   },
   "nextReservation": {
     "startDate": "2026-11-20",
@@ -164,7 +165,8 @@
       }
     ],
     "daysUntil": 14,
-    "reservationOrder": 43
+    "reservationOrder": 143,
+    "reservationOrderInYear": 43
   },
   "allTimeVisits": 120,
   "allTimeNights": 300,

@@ -138,7 +138,7 @@ never create duplicate timers. `apiToken` is optional: without it no `X-Api-Key`
 ## Backend API
 
 The module calls `GET {apiBaseUrl}/api/stats` and expects the live stats object: `isOccupied`, `currentReservation`
-(with `guests`, `remainingNights` and `reservationOrder`), `nextReservation` (with `guests`, `daysUntil` and `reservationOrder`), `allTimeVisits`,
+(with `guests`, `remainingNights` and `reservationOrderInYear`), `nextReservation` (with `guests`, `daysUntil` and `reservationOrderInYear`), `allTimeVisits`,
 `allTimeNights`, `allTimeUniqueGuests`, and the fact lists `guestFunFacts`, `cabinFunFacts` and `nextVisitFunFacts`.
 Dates are `YYYY-MM-DD` strings. Each guest has `guestId`, `firstName`, `lastName`, `avatarUrl` (nullable, fetched with
 `GET {apiBaseUrl}{avatarUrl}`), `isFirstVisit` and `allTime.totalVisits` / `allTime.visitsRank`.
