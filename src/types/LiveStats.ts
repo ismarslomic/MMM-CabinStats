@@ -55,7 +55,7 @@ function isCurrentReservation(value: unknown): boolean {
     isIsoDate(value.endDate) &&
     isArrayOf(value.guests, isGuestStats) &&
     isNumber(value.remainingNights) &&
-    isNumber(value.reservationOrder)
+    isNumber(value.reservationOrderInYear)
   )
 }
 
@@ -66,7 +66,7 @@ function isNextReservation(value: unknown): boolean {
     isIsoDate(value.endDate) &&
     isArrayOf(value.guests, isGuestStats) &&
     isNumber(value.daysUntil) &&
-    isNumber(value.reservationOrder)
+    isNumber(value.reservationOrderInYear)
   )
 }
 

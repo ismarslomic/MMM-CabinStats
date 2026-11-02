@@ -53,12 +53,12 @@ describe('templates/MMM-CabinStats.njk facts', () => {
   })
 
   test('shows the facts in the occupied and compact views too', () => {
-    const nextVisit = { dateRange: '15.–18. okt.', daysUntil: 1, reservationOrder: 43, guests: [] }
+    const nextVisit = { dateRange: '15.–18. okt.', daysUntil: 1, reservationOrderInYear: 43, guests: [] }
     const compact = render({ view: 'compact', display: 'stats', guestFact, cabinFact, nextVisit, totals: null })
     expect(compact).toContain('cabin-highlight-stat">12 måneder</span>')
     expect(compact).toContain('cabin-fact-cabin')
 
-    const stay = { dateRange: '14.–17. okt.', remainingNights: 2, reservationOrder: 42 }
+    const stay = { dateRange: '14.–17. okt.', remainingNights: 2, reservationOrderInYear: 42 }
     const occupied = render({
       view: 'occupied',
       display: 'stats',

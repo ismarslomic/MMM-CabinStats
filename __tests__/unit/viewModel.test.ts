@@ -74,7 +74,7 @@ describe('buildViewModel', () => {
         startDate: '2026-10-04',
         endDate: '2026-10-08',
         remainingNights: 2,
-        reservationOrder: 42,
+        reservationOrderInYear: 42,
       })
       expect(model.guests).toEqual([
         {

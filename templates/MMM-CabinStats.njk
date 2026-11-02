@@ -85,7 +85,7 @@
   <h2 class="cabin-heading large light bright">{{ 'HEADING_OCCUPIED' | translate }}</h2>
 
   <p class="cabin-stay small dimmed">
-    {{ 'RESERVATION_NUMBER' | translate({ count: stay.reservationOrder }) }} · {{ stay.dateRange }} ·
+    {{ 'RESERVATION_NUMBER' | translate({ count: stay.reservationOrderInYear }) }} · {{ stay.dateRange }} ·
     {% if stay.remainingNights > 1 %}
     {{ 'STAY_NIGHTS_LEFT_OTHER' | translate({ count: stay.remainingNights }) }}
     {% elif stay.remainingNights == 1 %}
@@ -105,7 +105,7 @@
   {# Upcoming visit #}
   {% if nextVisit %}
   <section class="cabin-next dimmed" aria-label="{{ 'HEADING_NEXT_VISIT' | translate }}">
-    <h3 class="cabin-next-heading small">{{ 'HEADING_NEXT_VISIT' | translate }} {{ nextVisit.dateRange }} · {{ 'RESERVATION_NUMBER' | translate({ count: nextVisit.reservationOrder }) }}</h3>
+    <h3 class="cabin-next-heading small">{{ 'HEADING_NEXT_VISIT' | translate }} {{ nextVisit.dateRange }} · {{ 'RESERVATION_NUMBER' | translate({ count: nextVisit.reservationOrderInYear }) }}</h3>
     <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
       {% for guest in nextVisit.guests %}{{ avatar(guest, 'small', guestView) }}{% endfor %}
     </ul>
@@ -132,7 +132,7 @@
     {{ 'NEXT_VISIT_IN_DAYS' | translate({ count: nextVisit.daysUntil }) }}
     {% endif %}
   </h2>
-  <p class="cabin-stay small dimmed">{{ 'RESERVATION_NUMBER' | translate({ count: nextVisit.reservationOrder }) }} · {{ nextVisit.dateRange }}</p>
+  <p class="cabin-stay small dimmed">{{ 'RESERVATION_NUMBER' | translate({ count: nextVisit.reservationOrderInYear }) }} · {{ nextVisit.dateRange }}</p>
 
   <ul class="cabin-guests cabin-guests-small" aria-label="{{ 'GUESTS_NEXT_VISIT' | translate }}">
     {% for guest in nextVisit.guests %}{{ avatar(guest, 'small', guestView) }}{% endfor %}
