@@ -8,6 +8,7 @@
   "STAY_NIGHTS_LEFT_ONE": "1 natt igjen",
   "STAY_NIGHTS_LEFT_OTHER": "{count} netter igjen",
   "STAY_LAST_DAY": "Siste dag",
+  "RESERVATION_NUMBER": "Opphold nr. {count}",
   "VISIT_NUMBER": "besøk nr. {count}",
   "FIRST_VISIT": "Første besøk!",
   "TOP_VISITOR": "Hyttas største fan",

@@ -70,7 +70,12 @@ describe('buildViewModel', () => {
     test('maps the guests of the current reservation', () => {
       const model = build(occupiedMixed)
       expect(model.view).toBe('occupied')
-      expect(model.stay).toEqual({ startDate: '2026-10-04', endDate: '2026-10-08', remainingNights: 2 })
+      expect(model.stay).toEqual({
+        startDate: '2026-10-04',
+        endDate: '2026-10-08',
+        remainingNights: 2,
+        reservationOrder: 42,
+      })
       expect(model.guests).toEqual([
         {
           guestId: 'guest-1',
