@@ -66,6 +66,7 @@
       }
     ],
     "remainingNights": 2,
+    "reservationOrder": 142,
     "reservationOrderInYear": 42
   },
   "nextReservation": null,

@@ -96,6 +96,7 @@
       }
     ],
     "remainingNights": 2,
+    "reservationOrder": 142,
     "reservationOrderInYear": 42
   },
   "nextReservation": {
@@ -164,6 +165,7 @@
       }
     ],
     "daysUntil": 14,
+    "reservationOrder": 143,
     "reservationOrderInYear": 43
   },
   "allTimeVisits": 120,
